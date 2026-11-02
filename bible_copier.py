@@ -9,7 +9,7 @@ BIBLE_API_URL=os.getenv("BIBLE_API_URL")
 
 def read_chapter(bible_id:str,chapter_id:str):
     response=requests.get(
-        f"{BIBLE_API_URL}/{bible_id}/chapters/{chapter_id}",
+        f"{BIBLE_API_URL}/bibles/{bible_id}/chapters/{chapter_id}",
         headers=headers,
         params={
             "content-type": "html",
@@ -20,17 +20,19 @@ def read_chapter(bible_id:str,chapter_id:str):
             "include-verse-spans": "false"
         }
     )
-    raw_json=json.loads(response.text)
+    raw_json=response.json()
     parsed_dict=raw_json.get("data",[])
     return parsed_dict
 
 
 
+
 bible_id = 'de4e12af7f28f599-02' 
 html_head = '<!DOCTYPE html><html lang="en"><head><meta property="og:image" content="https://angga-labola.github.io/photos/og.png"><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="color-scheme" content="dark light"><link rel="stylesheet" href="/static/styles.css"><title>Bible</title></head><body><img src="/static/photos/cross_vector.jpg" alt="Cross" height="250" width="150" class="center-block"><br><br>'
-html_foot ='</body>'
+html_foot ='<script src="https://giscus.app/client.js" data-repo="Angga-Labola/Angga-Labola.github.io" data-repo-id="R_kgDOU7HrkQ" data-category="Announcements" data-category-id="DIC_kwDOU7Hrkc4DHDs-" data-mapping="pathname" data-strict="1" data-reactions-enabled="1" data-emit-metadata="1" data-input-position="top" data-theme="dark" data-lang="en" data-loading="lazy" crossorigin="anonymous" async></script></body>'
 book_id='REV'
 total_chapter=22
+
 
 output_dir = f"bible/{book_id}"
 os.makedirs(output_dir, exist_ok=True)

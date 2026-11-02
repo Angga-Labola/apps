@@ -11,15 +11,51 @@ let books = [];
 let currentBook;
 let currentChapter;
 let requestNumber = 0;
+let giscusFrame;
+let giscusTerm;
 
-function updateAddress(verse) {
-    const url = new URL("/bible", window.location.origin);
-    url.searchParams.set("book", currentBook.id);
-    url.searchParams.set("chapter", String(currentChapter));
+function updateAddress(verse, replace = false) {
+    const url = new URL(`/${currentBook.id}/${currentChapter}`, window.location.origin);
     if (verse) {
         url.searchParams.set("verse", String(verse));
     }
-    window.history.pushState({}, "", url);
+    if (replace) {
+        window.history.replaceState({}, "", url);
+    } else {
+        window.history.pushState({}, "", url);
+    }
+    updateGiscusDiscussion();
+}
+
+function updateGiscusDiscussion() {
+    const frame = document.querySelector("iframe.giscus-frame");
+    if (!frame) {
+        return;
+    }
+    if (frame !== giscusFrame) {
+        giscusFrame = frame;
+        giscusTerm = null;
+        frame.addEventListener("load", () => {
+            giscusTerm = null;
+            sendGiscusConfig(frame);
+        });
+    }
+    sendGiscusConfig(frame);
+}
+
+function sendGiscusConfig(frame) {
+    const term = window.location.pathname;
+    if (giscusTerm === term) {
+        return;
+    }
+    frame.contentWindow?.postMessage({
+        giscus: {
+            setConfig: {
+                term,
+            },
+        },
+    }, "https://giscus.app");
+    giscusTerm = term;
 }
 
 function setChapterOptions(book, selectedChapter) {
@@ -68,7 +104,9 @@ async function loadChapter(book, chapter, verse, addHistory = false) {
     verseSelect.disabled = true;
 
     try {
-        const response = await fetch(`/${encodeURIComponent(book.id)}/${chapter}`);
+        const response = await fetch(
+            `/api/bible/${encodeURIComponent(book.id)}/${chapter}`,
+        );
         if (!response.ok) {
             throw new Error(`Could not load ${book.name} ${chapter}.`);
         }
@@ -158,12 +196,14 @@ nextButton.addEventListener("click", () => moveChapter(1));
 
 window.addEventListener("popstate", () => {
     const params = new URLSearchParams(window.location.search);
-    const book = findBook(params.get("book"));
-    const requestedChapter = Number(params.get("chapter"));
+    const path = window.location.pathname.match(/^\/([A-Z0-9]{3})\/(\d+)\/?$/);
+    const book = findBook(path?.[1] || params.get("book"));
+    const requestedChapter = Number(path?.[2] || params.get("chapter"));
     const chapter = book.chapters.includes(requestedChapter)
         ? requestedChapter
         : book.chapters[0];
     loadChapter(book, chapter, Number(params.get("verse")) || null);
+    updateGiscusDiscussion();
 });
 
 async function startReader() {
@@ -187,16 +227,26 @@ async function startReader() {
         bookSelect.disabled = false;
 
         const params = new URLSearchParams(window.location.search);
-        const book = findBook(params.get("book"));
-        const requestedChapter = Number(params.get("chapter"));
+        const path = window.location.pathname.match(/^\/([A-Z0-9]{3})\/(\d+)\/?$/);
+        const book = findBook(path?.[1] || params.get("book"));
+        const requestedChapter = Number(path?.[2] || params.get("chapter"));
         const chapter = book.chapters.includes(requestedChapter)
             ? requestedChapter
             : book.chapters[0];
+        currentBook = book;
+        currentChapter = chapter;
+        updateAddress(Number(params.get("verse")) || null, true);
         loadChapter(book, chapter, Number(params.get("verse")) || null);
+        updateGiscusDiscussion();
     } catch (error) {
         readerStatus.textContent = error.message;
         chapterHeading.textContent = "The reader could not be opened";
     }
 }
+
+new MutationObserver(updateGiscusDiscussion).observe(document.body, {
+    childList: true,
+    subtree: true,
+});
 
 startReader();

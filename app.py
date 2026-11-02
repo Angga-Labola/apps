@@ -64,6 +64,16 @@ def read_page(book_id:str,chapter_id:str):
     chapter_path = Path("templates/bible") / book_id / f"{book_id}_{chapter_id}.html"
     if not chapter_path.is_file():
         raise HTTPException(status_code=404, detail="Bible chapter not found")
+    return FileResponse("templates/bible_reader.html")
+
+
+@app.get("/api/bible/{book_id}/{chapter_id}")
+def bible_chapter(book_id:str,chapter_id:str):
+    if book_id not in BOOK_NAMES or not chapter_id.isdigit():
+        raise HTTPException(status_code=404, detail="Bible chapter not found")
+    chapter_path = Path("templates/bible") / book_id / f"{book_id}_{chapter_id}.html"
+    if not chapter_path.is_file():
+        raise HTTPException(status_code=404, detail="Bible chapter not found")
     return FileResponse(chapter_path)
 
 
@@ -83,5 +93,4 @@ def encryption(payload:encryption_payload):
 if __name__=="__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0",port=8000)
-
 
