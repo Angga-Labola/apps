@@ -2,15 +2,16 @@ import base64
 from Crypto.Cipher import AES
 
 import os
-#from dotenv import load_dotenv
-#load_dotenv()
+from dotenv import load_dotenv
+load_dotenv()
 
 key=os.getenv("ENCRYPTION_KEY")
 
 # Encrypt a string
-def encrypt_string(plain_text: str, key: str) -> str:
+def encrypt_string(plain_text: str) -> str:
     # Convert text to bytes
     data = plain_text.encode('utf-8')
+    key=os.getenv("ENCRYPTION_KEY")
     bkey = base64.b64decode(key.encode('utf-8'))
 
     # Create AES cipher in GCM mode (generates a random nonce automatically)

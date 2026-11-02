@@ -1,7 +1,7 @@
 function copyOutput() {
             // Get the text content from the output element
-            const textToCopy = document.getElementById('output-text').innerText;
-
+            const textToCopy = document.getElementById('result_container').innerText;
+         
             // Use the Clipboard API to copy the text
             navigator.clipboard.writeText(textToCopy).then(() => {
                 const status = document.getElementById('copy-status');
@@ -10,16 +10,15 @@ function copyOutput() {
             }).catch(err => {
                 console.error('Failed to copy: ', err);
             });
+
         }
 
 document.getElementById("form").addEventListener("submit", async (e) => {
 
     e.preventDefault()
     const plain_text = document.getElementById("plain_text").value;
-    const loadingText = document.getElementById('loadingText');
     const result_container = document.getElementById('result_container');
     
-    loadingText.style.display = "block";
 
     try{
         const response = await fetch('/encryption', {
@@ -28,7 +27,7 @@ document.getElementById("form").addEventListener("submit", async (e) => {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    urlInput: urlInputValue
+                    plain_text: plain_text
                 })
             });
         if (!response.ok) throw new Error('Encryption process was not ok');
@@ -36,7 +35,5 @@ document.getElementById("form").addEventListener("submit", async (e) => {
         document.getElementById("result_container").innerHTML=`<pre>${data}</pre>` 
     } catch (error) {
         alert('Error encrypting text: ' + error.message);
-    } finally {
-        loadingText.style.display = 'none';
-    }
+    } 
 })

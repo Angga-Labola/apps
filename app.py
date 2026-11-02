@@ -6,10 +6,6 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from encryption import encrypt_string
-from dotenv import load_dotenv
-load_dotenv()
-import os
-ENCRYPTION_KEY=os.getenv("ENCRYPTION_KEY")
 
 
 
@@ -82,13 +78,13 @@ class encryption_payload(BaseModel):
 
 @app.get("/encryption")
 def home():
-    return FileResponse("encryption.html")
+    return FileResponse("templates/encryption.html")
 
 @app.post("/encryption")
 def encryption(payload:encryption_payload):
-    post=encryption_payload.plain_text
-    response = encrypt_string(post, ENCRYPTION_KEY)
-    return response.json()        
+    post=payload.plain_text
+    response = encrypt_string(post)
+    return response   
 
 if __name__=="__main__":
     import uvicorn

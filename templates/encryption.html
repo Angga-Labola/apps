@@ -12,10 +12,11 @@
 
 <div id="navbar-placeholder"></div>
 
+<br><br>
     <h2>Encryption</h2>
     <p>Enter text to encrypt:</p>
-    <form method="POST">
-        <textarea type="text" id="plain_text" name="text" step="any" required
+    <form method="POST" id="form">
+        <textarea type=text id="plain_text" required
          style="width: 100%;
          max-width: 600px;      
          height: 200px;    
@@ -26,15 +27,12 @@
         </button>
     </form>
 
-    <div id="loadingText" style="display: none;">Trying to encrypt</div>
-
-    <div id="result_container"></div>
-
     
+    <div id="result_container"></div>
 
     <br><br>
     <!-- Copy Button -->
-    <button onclick="copyOutput()" class="button-link">
+    <button onclick="copyOutput()" class="button-link" id="copyButton" >
     Copy Output
     </button>
     <span id="copy-status" style="margin-left: 10px; color: green;"></span>
