@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <link rel="stylesheet" href="/static/styles.css">
+    <title>Decryption</title>
+</head>
+
+<body>
+
+<div id="navbar-placeholder"></div>
+
+<br><br>
+    <h2>Decryption</h2>
+    <p>Enter text to Decrypt:</p>
+    <form method="POST" id="form">
+        <textarea type=text id="ciphertext" required
+         style="width: 100%;
+         max-width: 600px;      
+         height: 200px;    
+         box-sizing: border-box;"></textarea>
+        <br><br>
+        <button type="submit" class="button-link">
+        Submit
+        </button>
+    </form>
+
+    
+    <div id="result_container"></div>
+
+    <br><br>
+    <!-- Copy Button -->
+    <button onclick="copyOutput()" class="button-link" id="copyButton" >
+    Copy Output
+    </button>
+    <span id="copy-status" style="margin-left: 10px; color: green;"></span>
+
+
+<script src="/static/navbar-placeholder.js"></script>
+<script src="/static/decryption.js"></script>
+
+</body>
+
+
+</html>
