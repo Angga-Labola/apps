@@ -11,51 +11,26 @@ let books = [];
 let currentBook;
 let currentChapter;
 let requestNumber = 0;
-let giscusFrame;
-let giscusTerm;
 
-function updateAddress(verse, replace = false) {
-    const url = new URL(`/${currentBook.id}/${currentChapter}`, window.location.origin);
+function chapterUrl(book, chapter, verse) {
+    const url = new URL(`/${book.id}/${chapter}`, window.location.origin);
     if (verse) {
         url.searchParams.set("verse", String(verse));
     }
+    return url;
+}
+
+function updateAddress(verse, replace = false) {
+    const url = chapterUrl(currentBook, currentChapter, verse);
     if (replace) {
         window.history.replaceState({}, "", url);
     } else {
         window.history.pushState({}, "", url);
     }
-    updateGiscusDiscussion();
 }
 
-function updateGiscusDiscussion() {
-    const frame = document.querySelector("iframe.giscus-frame");
-    if (!frame) {
-        return;
-    }
-    if (frame !== giscusFrame) {
-        giscusFrame = frame;
-        giscusTerm = null;
-        frame.addEventListener("load", () => {
-            giscusTerm = null;
-            sendGiscusConfig(frame);
-        });
-    }
-    sendGiscusConfig(frame);
-}
-
-function sendGiscusConfig(frame) {
-    const term = window.location.pathname;
-    if (giscusTerm === term) {
-        return;
-    }
-    frame.contentWindow?.postMessage({
-        giscus: {
-            setConfig: {
-                term,
-            },
-        },
-    }, "https://giscus.app");
-    giscusTerm = term;
+function navigateToChapter(book, chapter) {
+    window.location.assign(chapterUrl(book, chapter, null));
 }
 
 function setChapterOptions(book, selectedChapter) {
@@ -161,24 +136,24 @@ function moveChapter(direction) {
     const bookIndex = books.indexOf(currentBook);
     const chapterIndex = currentBook.chapters.indexOf(currentChapter) + direction;
     if (chapterIndex >= 0 && chapterIndex < currentBook.chapters.length) {
-        loadChapter(currentBook, currentBook.chapters[chapterIndex], null, true);
+        navigateToChapter(currentBook, currentBook.chapters[chapterIndex]);
         return;
     }
 
     const nextBook = books[bookIndex + direction];
     if (nextBook) {
         const chapter = direction > 0 ? nextBook.chapters[0] : nextBook.chapters.at(-1);
-        loadChapter(nextBook, chapter, null, true);
+        navigateToChapter(nextBook, chapter);
     }
 }
 
 bookSelect.addEventListener("change", () => {
     const book = findBook(bookSelect.value);
-    loadChapter(book, book.chapters[0], null, true);
+    navigateToChapter(book, book.chapters[0]);
 });
 
 chapterSelect.addEventListener("change", () => {
-    loadChapter(currentBook, Number(chapterSelect.value), null, true);
+    navigateToChapter(currentBook, Number(chapterSelect.value));
 });
 
 verseSelect.addEventListener("change", () => {
@@ -203,7 +178,6 @@ window.addEventListener("popstate", () => {
         ? requestedChapter
         : book.chapters[0];
     loadChapter(book, chapter, Number(params.get("verse")) || null);
-    updateGiscusDiscussion();
 });
 
 async function startReader() {
@@ -233,20 +207,19 @@ async function startReader() {
         const chapter = book.chapters.includes(requestedChapter)
             ? requestedChapter
             : book.chapters[0];
+        const verse = Number(params.get("verse")) || null;
+        const url = chapterUrl(book, chapter, verse);
+        if (window.location.pathname !== url.pathname) {
+            window.location.replace(url);
+            return;
+        }
         currentBook = book;
         currentChapter = chapter;
-        updateAddress(Number(params.get("verse")) || null, true);
-        loadChapter(book, chapter, Number(params.get("verse")) || null);
-        updateGiscusDiscussion();
+        loadChapter(book, chapter, verse);
     } catch (error) {
         readerStatus.textContent = error.message;
         chapterHeading.textContent = "The reader could not be opened";
     }
 }
-
-new MutationObserver(updateGiscusDiscussion).observe(document.body, {
-    childList: true,
-    subtree: true,
-});
 
 startReader();
