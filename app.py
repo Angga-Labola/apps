@@ -5,6 +5,12 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+from encryption import encrypt_string
+from dotenv import load_dotenv
+load_dotenv()
+import os
+ENCRYPTION_KEY=os.getenv("ENCRYPTION_KEY")
+
 
 
 app = FastAPI()
@@ -31,8 +37,6 @@ BOOK_NAMES = {
     "REV": "Revelation",
 }
 
-
-
 @app.get("/bible")
 def bible_home():
     return FileResponse("templates/bible_reader.html")
@@ -53,7 +57,6 @@ def bible_books():
             books.append({"id": book_id, "name": name, "chapters": chapters})
     return {"books": books}
 
-
 @app.get("/{book_id}/{chapter_id}")
 def read_page(book_id:str,chapter_id:str):
     if book_id not in BOOK_NAMES or not chapter_id.isdigit():
@@ -63,6 +66,19 @@ def read_page(book_id:str,chapter_id:str):
         raise HTTPException(status_code=404, detail="Bible chapter not found")
     return FileResponse(chapter_path)
 
+
+class encryption_payload(BaseModel):
+    plain_text:str
+
+@app.get("/encryption")
+def home():
+    return FileResponse("encryption.html")
+
+@app.post("/encryption")
+def encryption(payload:encryption_payload):
+    post=encryption_payload.plain_text
+    response = encrypt_string(post, ENCRYPTION_KEY)
+    return response.json()        
 
 if __name__=="__main__":
     import uvicorn
