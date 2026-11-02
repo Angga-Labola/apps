@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#000000">
+    <link rel="stylesheet" href="/static/styles.css">
+    <title>The Holy Bible</title>
+</head>
+<body class="bible-app">
+    <div id="navbar-placeholder"></div>
+
+    <main class="reader-main">
+        <section class="reader-intro">
+            <div>
+                <h1>The Holy Bible</h1>
+                <p class="reader-description">Choose a book, chapter, or verse and spend a moment in Scripture.</p>
+            </div>
+        </section>
+
+        <section class="reader-picker" aria-label="Choose a passage">
+            <label class="reader-field">
+                <span>BOOK</span>
+                <select id="book-select" aria-label="Choose a book" disabled>
+                    <option>Loading books...</option>
+                </select>
+            </label>
+            <label class="reader-field">
+                <span>CHAPTER</span>
+                <select id="chapter-select" aria-label="Choose a chapter" disabled></select>
+            </label>
+            <label class="reader-field">
+                <span>VERSE</span>
+                <select id="verse-select" aria-label="Choose a verse" disabled></select>
+            </label>
+            <div class="reader-chapter-buttons">
+                <button id="previous-button" class="chapter-button chapter-button-secondary" type="button" aria-label="Previous chapter" disabled>
+                    <span aria-hidden="true">←</span> Previous
+                </button>
+                <button id="next-button" class="chapter-button" type="button" disabled>
+                    Next chapter <span aria-hidden="true">→</span>
+                </button>
+            </div>
+        </section>
+
+        <p id="reader-status" class="reader-status" role="status" aria-live="polite"></p>
+
+        <article class="reader-page" aria-labelledby="chapter-heading">
+            <div class="reader-page-top">
+                <p class="reader-eyebrow">NOW READING</p>
+                <span class="reader-page-flourish" aria-hidden="true">✦</span>
+            </div>
+            <h2 id="chapter-heading">Open a chapter</h2>
+            <div id="chapter-content" class="chapter-content"></div>
+        </article>
+
+    </main>
+    <script src="/static/navbar-placeholder.js" defer></script>
+    <script src="/static/bible-reader.js" defer></script>
+</body>
+</html>
