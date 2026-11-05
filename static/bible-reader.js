@@ -1,6 +1,7 @@
 const bookSelect = document.getElementById("book-select");
 const chapterSelect = document.getElementById("chapter-select");
-const verseSelect = document.getElementById("verse-select");
+const commentarySelect = document.getElementById("commentary-select");
+const openCommentaryLink = document.getElementById("open-commentary-link");
 const previousButton = document.getElementById("previous-button");
 const nextButton = document.getElementById("next-button");
 const chapterHeading = document.getElementById("chapter-heading");
@@ -12,25 +13,12 @@ let currentBook;
 let currentChapter;
 let requestNumber = 0;
 
-function chapterUrl(book, chapter, verse) {
-    const url = new URL(`/${book.id}/${chapter}`, window.location.origin);
-    if (verse) {
-        url.searchParams.set("verse", String(verse));
-    }
-    return url;
-}
-
-function updateAddress(verse, replace = false) {
-    const url = chapterUrl(currentBook, currentChapter, verse);
-    if (replace) {
-        window.history.replaceState({}, "", url);
-    } else {
-        window.history.pushState({}, "", url);
-    }
+function chapterUrl(book, chapter) {
+    return new URL(`/${book.id}/${chapter}`, window.location.origin);
 }
 
 function navigateToChapter(book, chapter) {
-    window.location.assign(chapterUrl(book, chapter, null));
+    window.location.assign(chapterUrl(book, chapter));
 }
 
 function setChapterOptions(book, selectedChapter) {
@@ -44,28 +32,28 @@ function setChapterOptions(book, selectedChapter) {
     chapterSelect.disabled = false;
 }
 
-function setVerseOptions(verses, selectedVerse) {
-    verseSelect.replaceChildren();
-    const firstOption = document.createElement("option");
-    firstOption.value = "";
-    firstOption.textContent = "Choose a verse";
-    verseSelect.append(firstOption);
-
-    for (const verse of verses) {
-        const option = document.createElement("option");
-        option.value = String(verse);
-        option.textContent = `Verse ${verse}`;
-        option.selected = verse === selectedVerse;
-        verseSelect.append(option);
-    }
-    verseSelect.disabled = verses.length === 0;
-}
-
 function findBook(bookId) {
     return books.find((book) => book.id === bookId) || books[0];
 }
 
-async function loadChapter(book, chapter, verse, addHistory = false) {
+function updateCommentaryLink() {
+    const commentaryId = commentarySelect.value;
+    if (!commentaryId) {
+        openCommentaryLink.href = "#";
+        openCommentaryLink.setAttribute("aria-disabled", "true");
+        openCommentaryLink.tabIndex = -1;
+        return;
+    }
+
+    openCommentaryLink.href = new URL(
+        `/commentary/${encodeURIComponent(commentaryId)}/${encodeURIComponent(currentBook.id)}/${currentChapter}`,
+        window.location.origin,
+    ).href;
+    openCommentaryLink.removeAttribute("aria-disabled");
+    openCommentaryLink.tabIndex = 0;
+}
+
+async function loadChapter(book, chapter, verse = null) {
     const thisRequest = ++requestNumber;
     currentBook = book;
     currentChapter = chapter;
@@ -76,7 +64,9 @@ async function loadChapter(book, chapter, verse, addHistory = false) {
     readerStatus.textContent = "Opening your chapter...";
     chapterContent.replaceChildren();
     chapterHeading.textContent = `${book.name} ${chapter}`;
-    verseSelect.disabled = true;
+    commentarySelect.disabled = true;
+    commentarySelect.value = "";
+    updateCommentaryLink();
 
     try {
         const response = await fetch(
@@ -98,35 +88,25 @@ async function loadChapter(book, chapter, verse, addHistory = false) {
             document.importNode(element, true)
         )));
 
-        const verseElements = [...chapterContent.querySelectorAll(".v[data-number]")];
-        const verses = [...new Set(verseElements.map((element) => Number(element.dataset.number)))]
-            .filter(Number.isInteger)
-            .sort((left, right) => left - right);
-        const selectedVerse = verses.includes(Number(verse)) ? Number(verse) : null;
-        setVerseOptions(verses, selectedVerse);
-
-        if (selectedVerse !== null) {
-            const verseElement = verseElements.find((element) => (
-                Number(element.dataset.number) === selectedVerse
-            ));
+        if (verse !== null) {
+            const verseElement = chapterContent.querySelector(
+                `.v[data-number="${CSS.escape(String(verse))}"]`,
+            );
             verseElement?.closest("p")?.classList.add("is-selected");
             verseElement?.scrollIntoView({ behavior: "smooth", block: "center" });
         }
 
         readerStatus.textContent = "";
+        commentarySelect.disabled = false;
         previousButton.disabled = book.chapters[0] === chapter && books[0].id === book.id;
         nextButton.disabled = book.chapters.at(-1) === chapter && books.at(-1).id === book.id;
-        if (addHistory) {
-            updateAddress(selectedVerse);
-        }
     } catch (error) {
         if (thisRequest !== requestNumber) {
             return;
         }
         readerStatus.textContent = error.message;
         chapterHeading.textContent = "Unable to open this chapter";
-        verseSelect.replaceChildren();
-        verseSelect.disabled = true;
+        commentarySelect.disabled = true;
         previousButton.disabled = true;
         nextButton.disabled = true;
     }
@@ -156,29 +136,12 @@ chapterSelect.addEventListener("change", () => {
     navigateToChapter(currentBook, Number(chapterSelect.value));
 });
 
-verseSelect.addEventListener("change", () => {
-    const verse = Number(verseSelect.value);
-    if (!verse) {
-        chapterContent.querySelector("p.is-selected")?.classList.remove("is-selected");
-        updateAddress(null);
-        return;
-    }
-    loadChapter(currentBook, currentChapter, verse, true);
+commentarySelect.addEventListener("change", () => {
+    updateCommentaryLink();
 });
 
 previousButton.addEventListener("click", () => moveChapter(-1));
 nextButton.addEventListener("click", () => moveChapter(1));
-
-window.addEventListener("popstate", () => {
-    const params = new URLSearchParams(window.location.search);
-    const path = window.location.pathname.match(/^\/([A-Z0-9]{3})\/(\d+)\/?$/);
-    const book = findBook(path?.[1] || params.get("book"));
-    const requestedChapter = Number(path?.[2] || params.get("chapter"));
-    const chapter = book.chapters.includes(requestedChapter)
-        ? requestedChapter
-        : book.chapters[0];
-    loadChapter(book, chapter, Number(params.get("verse")) || null);
-});
 
 async function startReader() {
     try {
@@ -200,15 +163,14 @@ async function startReader() {
         }));
         bookSelect.disabled = false;
 
-        const params = new URLSearchParams(window.location.search);
         const path = window.location.pathname.match(/^\/([A-Z0-9]{3})\/(\d+)\/?$/);
-        const book = findBook(path?.[1] || params.get("book"));
-        const requestedChapter = Number(path?.[2] || params.get("chapter"));
+        const book = findBook(path?.[1]);
+        const requestedChapter = Number(path?.[2]);
         const chapter = book.chapters.includes(requestedChapter)
             ? requestedChapter
             : book.chapters[0];
-        const verse = Number(params.get("verse")) || null;
-        const url = chapterUrl(book, chapter, verse);
+        const verse = Number(new URLSearchParams(window.location.search).get("verse")) || null;
+        const url = chapterUrl(book, chapter);
         if (window.location.pathname !== url.pathname) {
             window.location.replace(url);
             return;

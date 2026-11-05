@@ -5,6 +5,7 @@ from fastapi.exceptions import HTTPException
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+import requests
 from encryption import encrypt_string
 from decryption import decrypt_string
 
@@ -32,6 +33,13 @@ BOOK_NAMES = {
     "HEB": "Hebrews", "JAS": "James", "1PE": "1 Peter", "2PE": "2 Peter",
     "1JN": "1 John", "2JN": "2 John", "3JN": "3 John", "JUD": "Jude",
     "REV": "Revelation",
+}
+
+COMMENTARIES = {
+    "john-calvin": "John Calvin",
+    "john-gill": "John Gill",
+    "matthew-henry": "Matthew Henry",
+    "jamieson-fausset-brown": "Jamieson-Fausset-Brown",
 }
 
 @app.get("/bible")
@@ -74,6 +82,80 @@ def bible_chapter(book_id:str,chapter_id:str):
     return FileResponse(chapter_path)
 
 
+@app.get("/api/bible/commentary/{commentary_id}/{book_id}/{chapter_id}")
+def bible_commentary(commentary_id:str,book_id:str,chapter_id:str):
+    if commentary_id not in COMMENTARIES:
+        raise HTTPException(status_code=404, detail="Commentary not found")
+    if book_id not in BOOK_NAMES or not chapter_id.isdigit():
+        raise HTTPException(status_code=404, detail="Bible chapter not found")
+
+    chapter_path = Path("templates/bible") / book_id / f"{book_id}_{chapter_id}.html"
+    if not chapter_path.is_file():
+        raise HTTPException(status_code=404, detail="Bible chapter not found")
+
+    try:
+        response = requests.get(
+            f"https://bible.helloao.org/api/c/{commentary_id}/{book_id}/{int(chapter_id)}.json",
+            timeout=15,
+        )
+    except requests.RequestException as error:
+        raise HTTPException(
+            status_code=502,
+            detail="The commentary service could not be reached",
+        ) from error
+
+    if response.status_code == 404:
+        raise HTTPException(
+            status_code=404,
+            detail="This commentary is not available for the selected chapter",
+        )
+    if not response.ok:
+        raise HTTPException(
+            status_code=502,
+            detail="The commentary service returned an error",
+        )
+
+    try:
+        data = response.json()
+    except ValueError as error:
+        raise HTTPException(
+            status_code=502,
+            detail="The commentary service returned invalid data",
+        ) from error
+
+    chapter = data.get("chapter") if isinstance(data, dict) else None
+    commentary = data.get("commentary") if isinstance(data, dict) else None
+    if not isinstance(chapter, dict) or not isinstance(chapter.get("content"), list):
+        raise HTTPException(
+            status_code=502,
+            detail="The commentary service returned an unexpected response",
+        )
+
+    return {
+        "commentary_id": commentary_id,
+        "commentary_name": commentary.get("name", COMMENTARIES[commentary_id])
+        if isinstance(commentary, dict)
+        else COMMENTARIES[commentary_id],
+        "website": commentary.get("website") if isinstance(commentary, dict) else None,
+        "license_url": commentary.get("licenseUrl") if isinstance(commentary, dict) else None,
+        "book": BOOK_NAMES[book_id],
+        "chapter": chapter,
+    }
+
+
+@app.get("/commentary/{commentary_id}/{book_id}/{chapter_id}")
+def commentary_page(commentary_id:str,book_id:str,chapter_id:str):
+    if commentary_id not in COMMENTARIES:
+        raise HTTPException(status_code=404, detail="Commentary not found")
+    if book_id not in BOOK_NAMES or not chapter_id.isdigit():
+        raise HTTPException(status_code=404, detail="Bible chapter not found")
+
+    chapter_path = Path("templates/bible") / book_id / f"{book_id}_{chapter_id}.html"
+    if not chapter_path.is_file():
+        raise HTTPException(status_code=404, detail="Bible chapter not found")
+    return FileResponse("templates/commentary_reader.html")
+
+
 class encryption_payload(BaseModel):
     plain_text:str
 
@@ -104,4 +186,3 @@ def decryption(payload:decryption_payload):
 if __name__=="__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0",port=8000)
-

@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#000000">
+    <link rel="stylesheet" href="/static/styles.css">
+    <title>Bible Commentary</title>
+</head>
+<body class="bible-app">
+    <div id="navbar-placeholder"></div>
+    <main class="reader-main commentary-reader">
+        <p><a id="back-to-chapter" class="button-link" href="/bible">Back to Bible chapter</a></p>
+        <article class="reader-page">
+            <div class="reader-page-top">
+                <p class="reader-eyebrow">CHAPTER COMMENTARY</p>
+                <span class="reader-page-flourish" aria-hidden="true">✦</span>
+            </div>
+            <h1 id="commentary-heading">Loading commentary...</h1>
+            <p id="commentary-status" class="commentary-status" role="status" aria-live="polite">
+                Loading commentary...
+            </p>
+            <div id="commentary-content" class="commentary-content"></div>
+        </article>
+    </main>
+    <script src="/static/navbar-placeholder.js" defer></script>
+    <script src="/static/commentary-reader.js" defer></script>
+</body>
+</html>

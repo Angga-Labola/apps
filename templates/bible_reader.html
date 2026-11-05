@@ -30,10 +30,21 @@
                 <span>CHAPTER</span>
                 <select id="chapter-select" aria-label="Choose a chapter" disabled></select>
             </label>
-            <label class="reader-field">
-                <span>VERSE</span>
-                <select id="verse-select" aria-label="Choose a verse" disabled></select>
-            </label>
+            <div class="reader-field">
+                <span id="commentary-label">COMMENTARY</span>
+                <div class="reader-commentary-controls">
+                    <select id="commentary-select" aria-labelledby="commentary-label" disabled>
+                        <option value="">Choose a commentary</option>
+                        <option value="john-calvin">John Calvin</option>
+                        <option value="john-gill">John Gill</option>
+                        <option value="matthew-henry">Matthew Henry</option>
+                        <option value="jamieson-fausset-brown">Jamieson-Fausset-Brown</option>
+                    </select>
+                    <a id="open-commentary-link" class="chapter-button commentary-open-link" href="#" target="_blank" rel="noopener noreferrer" aria-label="Open selected commentary in a new tab" aria-disabled="true" tabindex="-1">
+                        Open
+                    </a>
+                </div>
+            </div>
             <div class="reader-chapter-buttons">
                 <button id="previous-button" class="chapter-button chapter-button-secondary" type="button" aria-label="Previous chapter" disabled>
                     <span aria-hidden="true">←</span> Previous

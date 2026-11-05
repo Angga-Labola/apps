@@ -393,6 +393,83 @@ p {
   margin-top: 18px;
 }
 
+.commentary-reader {
+  margin-top: 32px;
+}
+
+.reader-commentary-controls {
+  display: flex;
+  gap: 6px;
+}
+
+.reader-commentary-controls select {
+  min-width: 0;
+  flex: 1;
+}
+
+.reader-commentary-controls .chapter-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 10px;
+}
+
+.commentary-open-link[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.commentary-reader h1 {
+  margin: 27px 0 0;
+  color: #73613c;
+  font-size: clamp(24px, 4vw, 32px);
+  font-weight: 400;
+}
+
+.commentary-status,
+.commentary-attribution {
+  color: #a68a55;
+  font-family: Arial, sans-serif;
+  font-size: 13px;
+  text-align: left;
+}
+
+.commentary-content {
+  margin-top: 18px;
+}
+
+.bible-app .commentary-content .commentary-entry {
+  margin: 18px 0;
+  padding: 14px 16px;
+  border-left: 2px solid rgba(115, 97, 60, 0.55);
+  border-radius: 0 6px 6px 0;
+  background: rgba(115, 97, 60, 0.08);
+}
+
+.bible-app .commentary-entry h2 {
+  margin: 0 0 8px;
+  color: #b89a5c;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+}
+
+.bible-app .commentary-content .commentary-entry p {
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  color: #c4b38e;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 16px;
+  line-height: 1.8;
+  text-align: left;
+  white-space: pre-wrap;
+}
+
+.commentary-attribution a {
+  color: #b89a5c;
+}
+
 .bible-app .chapter-content p {
   max-width: none;
   margin: 20px 0;

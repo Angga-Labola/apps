@@ -11,8 +11,7 @@ the HTML that the reader inserts into the page.
   status area, and chapter-content container. It loads
   `static/bible-reader.js` and the Giscus client.
 - `static/bible-reader.js` loads the book catalog, fetches chapter HTML, updates
-  the controls, handles navigation, and synchronizes the selected passage with
-  the browser URL.
+  the controls, opens selected commentary in a new tab, and handles navigation.
 - `templates/bible/<BOOK>/<BOOK>_<CHAPTER>.html` contains the source HTML for
   each chapter. For example, Genesis chapter 2 is
   `templates/bible/GEN/GEN_2.html`.
@@ -26,6 +25,8 @@ the HTML that the reader inserts into the page.
 | `/{book_id}/{chapter_id}` | Validates that the book and chapter exist, then serves `templates/bible_reader.html`. For example, `/GEN/2` is the Genesis 2 reader page. |
 | `/api/bible/books` | Scans the chapter files and returns the available books and chapter numbers as JSON. |
 | `/api/bible/{book_id}/{chapter_id}` | Validates the requested passage and returns its source chapter HTML. The reader fetches this route to display the chapter. |
+| `/api/bible/commentary/{commentary_id}/{book_id}/{chapter_id}` | Fetches chapter commentary from the Free Use Bible API for an allowed commentary. |
+| `/commentary/{commentary_id}/{book_id}/{chapter_id}` | Serves the commentary page opened from the reader's commentary selector. |
 
 The two chapter-shaped routes have distinct roles. `/GEN/2` is the actual page
 URL; `/api/bible/GEN/2` is a data request made by the reader's JavaScript.
@@ -46,9 +47,8 @@ pathname to identify a chapter's discussion.
 4. `loadChapter()` requests the corresponding `/api/bible/{book}/{chapter}`
    route. It parses the returned HTML, removes the chapter's image, line
    breaks, and source heading, then inserts the verse content into the reader.
-5. The script finds the verse-number elements in the inserted content, fills
-   the verse selector, and enables or disables the Previous and Next buttons
-   according to the first and last available chapters.
+5. The script enables the commentary selector and the Previous and Next
+   buttons as appropriate for the first and last available chapters.
 
 ## Navigation and URLs
 
@@ -56,14 +56,26 @@ pathname to identify a chapter's discussion.
 - Selecting a chapter, or using Previous/Next, navigates to that chapter's
   page URL. Moving past the beginning or end of a book continues to the
   previous or next book when one exists.
-- Selecting a verse highlights its paragraph, scrolls it into view, and adds
-  the verse to the URL as a query parameter. For example,
-  `/GEN/2?verse=3`. Clearing the verse selection removes the highlight and
-  query parameter.
 - Browser back and forward navigation reloads the passage indicated by the
   current URL.
 - A request counter prevents an older, slower chapter request from replacing
   content from a newer request.
+
+## Chapter commentaries
+
+The selector offers John Calvin, John Gill, Matthew Henry, and
+Jamieson-Fausset-Brown. Choose an author and click **Open** to open its
+dedicated commentary page in a new tab for the current book and chapter. The
+separate button avoids browsers blocking a new tab opened directly by a
+dropdown change. That page fetches commentary through the backend API route.
+The backend uses the Free Use Bible API
+(`https://bible.helloao.org`) and only accepts the four configured commentary
+IDs. It returns commentary text and source/license links; the browser renders
+the text as plain text rather than inserting HTML.
+
+Commentary coverage differs between authors. If a commentary has no entry for
+the selected chapter, the new tab displays an availability message instead of
+commentary text. Source and license links are shown with the loaded commentary.
 
 ## Giscus discussions
 
