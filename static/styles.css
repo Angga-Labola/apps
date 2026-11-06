@@ -321,6 +321,38 @@ p {
   gap: 8px;
 }
 
+.commentary-navigation {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.commentary-navigation-status {
+  color: #a68a55;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  text-align: center;
+}
+
+.commentary-navigation .chapter-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.chapter-button[aria-disabled="true"] {
+  cursor: not-allowed;
+  opacity: 0.45;
+  pointer-events: none;
+}
+
+.commentary-back-to-top {
+  margin: 28px 0;
+  text-align: center;
+}
+
 .chapter-button {
   min-height: 43px;
   padding: 0 14px;
@@ -531,6 +563,10 @@ p {
   }
 
   .reader-chapter-buttons .chapter-button {
+    flex: 1;
+  }
+
+  .commentary-navigation .chapter-button {
     flex: 1;
   }
 }

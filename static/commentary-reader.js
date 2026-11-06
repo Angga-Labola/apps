@@ -1,7 +1,58 @@
 const commentaryHeading = document.getElementById("commentary-heading");
 const commentaryStatus = document.getElementById("commentary-status");
 const commentaryContent = document.getElementById("commentary-content");
-const backToChapter = document.getElementById("back-to-chapter");
+const previousCommentary = document.getElementById("previous-commentary");
+const nextCommentary = document.getElementById("next-commentary");
+const navigationStatus = document.getElementById("commentary-navigation-status");
+
+function setNavigationLink(link, passage, commentaryId, label) {
+    if (!passage) {
+        link.removeAttribute("href");
+        link.setAttribute("aria-disabled", "true");
+        link.tabIndex = -1;
+        return;
+    }
+
+    link.href = `/commentary/${encodeURIComponent(commentaryId)}/${encodeURIComponent(passage.id)}/${passage.chapter}`;
+    link.removeAttribute("aria-disabled");
+    link.tabIndex = 0;
+    link.setAttribute("aria-label", `${label}: ${passage.name} ${passage.chapter}`);
+}
+
+async function setupChapterNavigation(commentaryId, bookId, chapter) {
+    const response = await fetch("/api/bible/books");
+    if (!response.ok) {
+        throw new Error("The chapter list could not be loaded.");
+    }
+
+    const catalog = await response.json();
+    const passages = catalog.books.flatMap((book) => (
+        book.chapters.map((chapterNumber) => ({
+            id: book.id,
+            name: book.name,
+            chapter: chapterNumber,
+        }))
+    ));
+    const currentIndex = passages.findIndex((passage) => (
+        passage.id === bookId && passage.chapter === chapter
+    ));
+    if (currentIndex === -1) {
+        throw new Error("This chapter is not in the available chapter list.");
+    }
+
+    setNavigationLink(
+        previousCommentary,
+        passages[currentIndex - 1],
+        commentaryId,
+        "Previous chapter",
+    );
+    setNavigationLink(
+        nextCommentary,
+        passages[currentIndex + 1],
+        commentaryId,
+        "Next chapter",
+    );
+}
 
 function appendSourceLink(container, href, label) {
     if (typeof href !== "string" || !href.startsWith("https://")) {
@@ -69,7 +120,12 @@ async function loadCommentary() {
         throw new Error("The commentary URL is invalid.");
     }
     const [, commentaryId, bookId, chapter] = match;
-    backToChapter.href = `/${encodeURIComponent(bookId)}/${chapter}`;
+    const chapterNumber = Number(chapter);
+    try {
+        await setupChapterNavigation(commentaryId, bookId, chapterNumber);
+    } catch (error) {
+        navigationStatus.textContent = error.message;
+    }
 
     try {
         const response = await fetch(

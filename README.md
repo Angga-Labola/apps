@@ -26,7 +26,7 @@ the HTML that the reader inserts into the page.
 | `/api/bible/books` | Scans the chapter files and returns the available books and chapter numbers as JSON. |
 | `/api/bible/{book_id}/{chapter_id}` | Validates the requested passage and returns its source chapter HTML. The reader fetches this route to display the chapter. |
 | `/api/bible/commentary/{commentary_id}/{book_id}/{chapter_id}` | Fetches chapter commentary from the Free Use Bible API for an allowed commentary. |
-| `/commentary/{commentary_id}/{book_id}/{chapter_id}` | Serves the commentary page opened from the reader's commentary selector. |
+| `/commentary/{commentary_id}/{book_id}/{chapter_id}` | Serves the commentary page opened from the reader's commentary selector, with chapter navigation. |
 
 The two chapter-shaped routes have distinct roles. `/GEN/2` is the actual page
 URL; `/api/bible/GEN/2` is a data request made by the reader's JavaScript.
@@ -65,7 +65,8 @@ pathname to identify a chapter's discussion.
 
 The selector offers John Calvin, John Gill, Matthew Henry, and
 Jamieson-Fausset-Brown. Choose an author and click **Open** to open its
-dedicated commentary page in a new tab for the current book and chapter. The
+dedicated commentary page in a new tab for the current book and chapter. The page
+has Previous/Next chapter controls and a Back to top link. The
 separate button avoids browsers blocking a new tab opened directly by a
 dropdown change. That page fetches commentary through the backend API route.
 The backend uses the Free Use Bible API

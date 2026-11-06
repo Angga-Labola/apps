@@ -8,10 +8,9 @@
     <link rel="stylesheet" href="/static/styles.css">
     <title>Bible Commentary</title>
 </head>
-<body class="bible-app">
+<body id="top" class="bible-app">
     <div id="navbar-placeholder"></div>
     <main class="reader-main commentary-reader">
-        <p><a id="back-to-chapter" class="button-link" href="/bible">Back to Bible chapter</a></p>
         <article class="reader-page">
             <div class="reader-page-top">
                 <p class="reader-eyebrow">CHAPTER COMMENTARY</p>
@@ -23,6 +22,16 @@
             </p>
             <div id="commentary-content" class="commentary-content"></div>
         </article>
+        <nav class="commentary-navigation" aria-label="Commentary chapter navigation">
+            <a id="previous-commentary" class="chapter-button chapter-button-secondary" aria-label="Previous chapter" aria-disabled="true" tabindex="-1">
+                <span aria-hidden="true">←</span> Previous chapter
+            </a>
+            <a id="next-commentary" class="chapter-button" aria-label="Next chapter" aria-disabled="true" tabindex="-1">
+                Next chapter <span aria-hidden="true">→</span>
+            </a>
+        </nav>
+        <p id="commentary-navigation-status" class="commentary-navigation-status" role="status" aria-live="polite"></p>
+
     </main>
     <script src="/static/navbar-placeholder.js" defer></script>
     <script src="/static/commentary-reader.js" defer></script>
