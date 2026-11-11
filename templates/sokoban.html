@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#111714">
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/sokoban.css">
+    <title>Sokoban — Warehouse Logic</title>
+</head>
+<body class="sokoban-app">
+    <div id="navbar-placeholder"></div>
+    <main class="sokoban-main">
+        <header class="sokoban-heading">
+            <div class="sokoban-kicker">A LITTLE SPATIAL REASONING</div>
+            <h1>Warehouse <span>Logic</span></h1>
+            <p>Push every crate onto a goal. Plan ahead — crates can only be pushed, never pulled.</p>
+        </header>
+
+        <div class="sokoban-layout">
+            <section class="game-panel" aria-label="Sokoban game">
+                <div class="game-toolbar">
+                    <div class="level-heading">
+                        <span class="panel-label">NOW PLAYING</span>
+                        <h2 id="current-level-name">Practice level</h2>
+                    </div>
+                    <div class="game-stats" aria-label="Game statistics">
+                        <div><span class="panel-label">MOVES</span><strong id="move-count">0</strong></div>
+                        <div><span class="panel-label">PUSHES</span><strong id="push-count">0</strong></div>
+                    </div>
+                </div>
+                <div class="game-view-controls">
+                    <button id="fullscreen-button" class="game-button secondary" type="button"
+                        aria-label="Enter fullscreen game view" aria-pressed="false">
+                        Fullscreen
+                    </button>
+                </div>
+
+                <p id="game-status" class="game-status" role="status" aria-live="polite">
+                    Use the arrow keys or WASD to move.
+                </p>
+                <div id="game-board" class="game-board" role="img" aria-label="Sokoban game board">
+                    <div id="game-grid" class="game-grid"></div>
+                </div>
+
+                <div class="game-controls">
+                    <button id="undo-button" class="game-button secondary" type="button">Undo</button>
+                    <button id="restart-button" class="game-button secondary" type="button">Restart</button>
+                    <button id="next-button" class="game-button" type="button" disabled>Next level</button>
+                </div>
+                <div class="touch-controls" aria-label="Movement controls">
+                    <button type="button" data-move="up" aria-label="Move up">↑</button>
+                    <div>
+                        <button type="button" data-move="left" aria-label="Move left">←</button>
+                        <button type="button" data-move="down" aria-label="Move down">↓</button>
+                        <button type="button" data-move="right" aria-label="Move right">→</button>
+                    </div>
+                </div>
+                <p class="keyboard-hint">Move: arrows / WASD <span>·</span> Undo: Z <span>·</span> Restart: R</p>
+            </section>
+
+            <aside class="levels-panel" aria-label="LetsLogic collections and levels">
+                <div class="levels-heading">
+                    <div>
+                        <span class="panel-label">LETSLOGIC LIBRARY</span>
+                        <h2>Collections &amp; levels</h2>
+                    </div>
+                    <span id="level-total" class="level-total">Loading collections…</span>
+                </div>
+                <label class="level-search-label" for="collection-select">LetsLogic collections</label>
+                <div class="collection-controls">
+                    <select id="collection-select" aria-label="Choose a LetsLogic collection" disabled>
+                        <option>Loading collections…</option>
+                    </select>
+                    <button id="download-collection-button" class="game-button" type="button" disabled>
+                        Import &amp; play
+                    </button>
+                </div>
+                <p id="collections-status" class="levels-status" role="status" aria-live="polite">
+                    Connecting to LetsLogic…
+                </p>
+                <article class="collection-description" aria-live="polite">
+                    <span class="panel-label">ABOUT THIS COLLECTION</span>
+                    <p id="collection-description">Choose a collection to see its description.</p>
+                    <span id="collection-author" class="collection-author"></span>
+                </article>
+                <label class="level-search-label" for="saved-collection-select">Saved collections</label>
+                <div class="collection-controls">
+                    <select id="saved-collection-select" aria-label="Choose a saved collection" disabled>
+                        <option>No saved collections</option>
+                    </select>
+                    <button id="open-saved-collection-button" class="game-button secondary" type="button" disabled>
+                        Open
+                    </button>
+                </div>
+                <p id="saved-collections-status" class="levels-status" role="status" aria-live="polite">
+                    Local downloads will appear here.
+                </p>
+                <div class="levels-divider"></div>
+                <h3 id="level-list-heading" class="level-list-heading">Levels</h3>
+                <label class="level-search-label" for="level-search">Find a level</label>
+                <input id="level-search" type="search" placeholder="Search by name or number" autocomplete="off">
+                <p id="levels-status" class="levels-status" role="status" aria-live="polite">
+                    Choose or download a collection to list its levels.
+                </p>
+                <div class="level-list-wrap">
+                    <ol id="level-list" class="level-list" aria-label="Available levels"></ol>
+                    <button id="show-more-button" class="show-more-button" type="button" hidden>Show more levels</button>
+                </div>
+                <p class="download-note">Imported collections are saved in <code>data/sokoban/collections/</code> locally and can be reopened here. Your API key stays on the server. Vercel’s file storage is temporary.</p>
+            </aside>
+        </div>
+        <footer class="sokoban-footer">
+            <span>Created with the <a href="https://kenney.nl/assets/sokoban" rel="noreferrer">Kenney Sokoban asset pack</a>.</span>
+            <span>Levels provided by <a href="https://letslogic.com" rel="noreferrer">LetsLogic</a>.</span>
+        </footer>
+    </main>
+    <script src="/static/navbar-without-sidebar.js" defer></script>
+    <script src="/static/sokoban.js" defer></script>
+</body>
+</html>

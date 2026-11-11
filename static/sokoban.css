@@ -1,0 +1,524 @@
+.sokoban-app {
+  --soko-bg: #111714;
+  --soko-panel: #19221d;
+  --soko-border: #2b3930;
+  --soko-muted: #9bab9e;
+  --soko-text: #f0f2e8;
+  --soko-accent: #bbd76a;
+  --soko-accent-dark: #27351b;
+  background:
+    radial-gradient(ellipse at 50% 0%, #24352a 0, transparent 46rem),
+    var(--soko-bg);
+  color: var(--soko-text);
+  min-height: 100vh;
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.sokoban-app *,
+.sokoban-app *::before,
+.sokoban-app *::after {
+  box-sizing: border-box;
+}
+
+.sokoban-app .navbar {
+  background: rgba(17, 23, 20, .84);
+  border-bottom-color: var(--soko-border);
+}
+
+.sokoban-app .navbar .nav-links a {
+  color: var(--soko-muted);
+}
+
+.sokoban-main {
+  width: min(1120px, calc(100% - 36px));
+  margin: 0 auto;
+  padding: 48px 0 32px;
+}
+
+.sokoban-heading {
+  margin: 0 auto 30px;
+  max-width: 760px;
+  text-align: center;
+}
+
+.sokoban-kicker,
+.panel-label {
+  color: var(--soko-accent);
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: .16em;
+}
+
+.sokoban-heading h1 {
+  color: var(--soko-text);
+  font-size: clamp(2.4rem, 7vw, 4.4rem);
+  letter-spacing: -.06em;
+  line-height: 1;
+  margin: 12px 0;
+}
+
+.sokoban-heading h1 span {
+  color: var(--soko-accent);
+}
+
+.sokoban-heading p,
+.keyboard-hint,
+.download-note {
+  color: var(--soko-muted);
+  font-size: .95rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.sokoban-layout {
+  align-items: start;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+}
+
+.game-panel,
+.levels-panel {
+  background: rgba(25, 34, 29, .92);
+  border: 1px solid var(--soko-border);
+  border-radius: 18px;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, .2);
+  min-width: 0;
+  padding: 22px;
+}
+
+.game-toolbar,
+.levels-heading,
+.game-stats,
+.game-controls,
+.download-controls {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+}
+
+.level-heading h2,
+.levels-heading h2 {
+  color: var(--soko-text);
+  font-size: 1.2rem;
+  margin: 5px 0 0;
+}
+
+.game-stats {
+  gap: 22px;
+}
+
+.game-stats div {
+  display: grid;
+  gap: 4px;
+  text-align: right;
+}
+
+.game-stats strong {
+  font-variant-numeric: tabular-nums;
+  font-size: 1.15rem;
+}
+
+.game-view-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
+.game-status,
+.levels-status {
+  color: var(--soko-muted);
+  font-size: .88rem;
+  min-height: 1.4em;
+  margin: 16px 0 12px;
+}
+
+.game-status.is-won {
+  color: var(--soko-accent);
+  font-weight: 700;
+}
+
+.game-board {
+  --tile-size: min(8vw, 48px);
+  align-items: center;
+  background: #101713;
+  border: 1px solid #29362e;
+  border-radius: 12px;
+  display: grid;
+  height: clamp(280px, 52vh, 560px);
+  justify-items: safe center;
+  margin: 0 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: 12px;
+  overscroll-behavior: contain;
+  width: 100%;
+}
+
+.game-grid {
+  align-self: safe center;
+  display: grid;
+  gap: 0;
+  height: fit-content;
+  width: fit-content;
+}
+
+.game-cell {
+  background-color: #778d91;
+  background-image: url("/static/sokoban_assets/PNG/Default%20size/Ground/ground_06.png");
+  background-size: cover;
+  height: var(--tile-size);
+  position: relative;
+  width: var(--tile-size);
+}
+
+.game-cell.is-player {
+  z-index: 2;
+}
+
+.game-cell.is-wall {
+  background-image: url("/static/sokoban_assets/PNG/Default%20size/Blocks/block_01.png");
+}
+
+.game-cell.is-goal::after {
+  background-image: url("/static/sokoban_assets/PNG/Default%20size/Environment/environment_09.png");
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  content: "";
+  height: 42%;
+  left: 29%;
+  position: absolute;
+  top: 29%;
+  width: 42%;
+}
+
+.game-cell img {
+  height: 100%;
+  image-rendering: pixelated;
+  object-fit: contain;
+  position: absolute;
+  width: 100%;
+  z-index: 1;
+}
+
+.game-controls {
+  gap: 9px;
+  justify-content: flex-start;
+  margin-top: 16px;
+}
+
+.game-button,
+.text-button,
+.show-more-button {
+  border: 1px solid transparent;
+  border-radius: 9px;
+  cursor: pointer;
+  font: inherit;
+  font-size: .86rem;
+  font-weight: 700;
+  min-height: 42px;
+  padding: 0 15px;
+  transition: background .15s ease, border-color .15s ease, transform .15s ease;
+}
+
+.game-button:not(:disabled) {
+  background: var(--soko-accent);
+  color: #182014;
+}
+
+.game-button:not(:disabled):hover,
+.show-more-button:hover {
+  transform: translateY(-1px);
+}
+
+.game-button.secondary,
+.text-button,
+.show-more-button {
+  background: #202b24;
+  border-color: var(--soko-border);
+  color: var(--soko-text);
+}
+
+.game-button:disabled,
+.text-button:disabled {
+  cursor: not-allowed;
+  opacity: .48;
+}
+
+.touch-controls {
+  display: none;
+  margin-top: 18px;
+}
+
+.touch-controls button {
+  background: #202b24;
+  border: 1px solid var(--soko-border);
+  border-radius: 9px;
+  color: var(--soko-text);
+  font-size: 1.25rem;
+  height: 45px;
+  margin: 3px;
+  touch-action: manipulation;
+  width: 52px;
+}
+
+.keyboard-hint {
+  font-size: .77rem;
+  margin-top: 13px;
+}
+
+.keyboard-hint span {
+  color: #5f7064;
+  padding: 0 5px;
+}
+
+.levels-heading {
+  gap: 12px;
+}
+
+.level-total {
+  color: var(--soko-muted);
+  font-size: .8rem;
+  text-align: right;
+}
+
+.level-search-label {
+  color: var(--soko-muted);
+  display: block;
+  font-size: .78rem;
+  margin: 20px 0 7px;
+}
+
+.collection-controls {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.collection-controls select,
+#level-search {
+  background: #101713;
+  border: 1px solid var(--soko-border);
+  border-radius: 9px;
+  color: var(--soko-text);
+  font: inherit;
+  min-height: 43px;
+  padding: 0 12px;
+  width: 100%;
+}
+
+.collection-controls select:focus,
+#level-search:focus,
+.level-list button:focus-visible,
+.game-button:focus-visible,
+.text-button:focus-visible,
+.show-more-button:focus-visible {
+  border-color: var(--soko-accent);
+  outline: 2px solid rgba(187, 215, 106, .28);
+  outline-offset: 2px;
+}
+
+.levels-status {
+  font-size: .78rem;
+  margin: 10px 0;
+}
+
+.collection-description {
+  background: #141c17;
+  border: 1px solid var(--soko-border);
+  border-radius: 9px;
+  margin-top: 12px;
+  padding: 11px 12px;
+}
+
+.collection-description p {
+  color: var(--soko-text);
+  font-size: .82rem;
+  line-height: 1.5;
+  margin: 6px 0 0;
+  overflow-wrap: anywhere;
+}
+
+.collection-author {
+  color: var(--soko-muted);
+  display: block;
+  font-size: .72rem;
+  margin-top: 6px;
+}
+
+.levels-divider {
+  border-top: 1px solid var(--soko-border);
+  margin: 16px 0;
+}
+
+.level-list-heading {
+  color: var(--soko-text);
+  font-size: .98rem;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.level-list-wrap {
+  border: 1px solid var(--soko-border);
+  border-radius: 10px;
+  max-height: 390px;
+  overflow: auto;
+}
+
+.level-list {
+  list-style: none;
+  margin: 0;
+  padding: 5px;
+}
+
+.level-list li + li {
+  border-top: 1px solid rgba(72, 90, 77, .35);
+}
+
+.level-list button {
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  color: var(--soko-text);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  gap: 10px;
+  justify-content: space-between;
+  padding: 10px 8px;
+  text-align: left;
+  width: 100%;
+}
+
+.level-list button:hover,
+.level-list button[aria-current="true"] {
+  background: var(--soko-accent-dark);
+}
+
+.level-list small {
+  color: var(--soko-muted);
+  flex: 0 0 auto;
+}
+
+.show-more-button {
+  border-radius: 0;
+  border-width: 1px 0 0;
+  width: 100%;
+}
+
+.download-controls {
+  align-items: stretch;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.download-controls .game-button,
+.download-controls .text-button {
+  width: 100%;
+}
+
+.download-note {
+  font-size: .72rem;
+  margin-top: 10px;
+}
+
+.download-note code {
+  color: var(--soko-accent);
+  font-size: .7rem;
+}
+
+.sokoban-footer {
+  color: var(--soko-muted);
+  display: flex;
+  flex-wrap: wrap;
+  font-size: .76rem;
+  gap: 8px 20px;
+  justify-content: center;
+  margin: 22px auto 0;
+}
+
+.sokoban-footer a {
+  color: var(--soko-accent);
+}
+
+.game-panel:fullscreen {
+  background: var(--soko-panel);
+  border: 0;
+  border-radius: 0;
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto auto auto;
+  height: 100%;
+  max-height: 100%;
+  overflow: hidden;
+  padding: clamp(12px, 2.4vw, 28px);
+  width: 100%;
+}
+
+.game-panel:fullscreen .game-board {
+  --tile-size: min(7vh, 48px);
+  height: 100%;
+  min-height: 0;
+}
+
+@media (max-width: 800px) {
+  .sokoban-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .levels-panel {
+    order: 2;
+  }
+
+  .game-board {
+    --tile-size: min(9vw, 48px);
+  }
+
+  .game-panel:fullscreen .game-board {
+    --tile-size: min(6vh, 38px);
+  }
+}
+
+@media (max-width: 520px) {
+  .sokoban-main {
+    padding-top: 32px;
+    width: min(100% - 20px, 1120px);
+  }
+
+  .game-panel,
+  .levels-panel {
+    padding: 15px;
+  }
+
+  .game-board {
+    --tile-size: min(10vw, 38px);
+    min-height: 210px;
+    padding: 8px;
+  }
+
+  .game-panel:fullscreen {
+    padding: 10px;
+  }
+
+  .game-panel:fullscreen .game-board {
+    --tile-size: min(5vh, 30px);
+    padding: 6px;
+  }
+
+  .game-controls {
+    flex-wrap: wrap;
+  }
+
+  .collection-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .touch-controls {
+    display: block;
+    text-align: center;
+  }
+}

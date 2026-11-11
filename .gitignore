@@ -11,3 +11,6 @@ wheels/
 .env
 
 keygen.py
+
+# Downloaded Sokoban collections
+data/sokoban/collections/*.json
