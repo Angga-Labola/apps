@@ -15,7 +15,7 @@ _DIRECTIONS = ((0, -1), (0, 1), (-1, 0), (1, 0))
 _OPPOSITE = (1, 0, 3, 2)
 _MOVE_CHARS = "UDLR"
 # Return "unknown" rather than claiming a result when either safety budget is hit.
-_MAX_SEARCH_STATES = 1000000
+_MAX_SEARCH_STATES = 10000000
 _MAX_SEARCH_SECONDS = 20.0
 
 
