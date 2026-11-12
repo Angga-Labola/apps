@@ -12,8 +12,12 @@
 <body class="sokoban-app">
     <div id="navbar-placeholder"></div>
     <main class="sokoban-main">
+        <header class="sokoban-heading">
+            <h1>Import <span>LetsLogic collection</span></h1>
+            <a class="game-button secondary" href="/sokoban">Back to game</a>
+        </header>
         <div class="sokoban-layout">
-            <aside class="levels-panel" aria-label="LetsLogic collections and levels">
+            <aside class="levels-panel" aria-label="Import a LetsLogic collection">
                 <div class="levels-heading">
                     <div>
                         <span class="panel-label">COLLECTION LIBRARY</span>
@@ -33,6 +37,7 @@
                 <p id="collections-status" class="levels-status" role="status" aria-live="polite">
                     Connecting to LetsLogic…
                 </p>
+                <p id="import-status" class="levels-status" role="status" aria-live="polite"></p>
                 <article class="collection-description" aria-live="polite">
                     <span class="panel-label">ABOUT THIS COLLECTION</span>
                     <p id="collection-description">Choose a collection to see its description.</p>
@@ -42,6 +47,6 @@
         </div>
     </main>
     <script src="/static/navbar-without-sidebar.js" defer></script>
-    <script src="/static/sokoban.js" defer></script>
+    <script src="/static/sokoban-import.js" defer></script>
 </body>
 </html>

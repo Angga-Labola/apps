@@ -36,11 +36,6 @@ const solutionMoveCounter = document.getElementById("solution-move-counter");
 const levelTotalElement = document.getElementById("level-total");
 const levelListElement = document.getElementById("level-list");
 const showMoreButton = document.getElementById("show-more-button");
-const downloadCollectionButton = document.getElementById("download-collection-button");
-const collectionSelect = document.getElementById("collection-select");
-const collectionsStatusElement = document.getElementById("collections-status");
-const collectionDescriptionElement = document.getElementById("collection-description");
-const collectionAuthorElement = document.getElementById("collection-author");
 const savedCollectionSelect = document.getElementById("saved-collection-select");
 const savedCollectionsStatusElement = document.getElementById("saved-collections-status");
 const openSavedCollectionButton = document.getElementById("open-saved-collection-button");
@@ -56,14 +51,13 @@ let solutionPlaybackMoves = null;
 let solutionPlaybackIndex = 0;
 let solverRequestId = 0;
 let solverRequestInProgress = false;
-let collections = [];
 let savedCollections = [];
 let selectedLevelIndex = -1;
 let visibleLevelCount = LEVEL_PAGE_SIZE;
 let currentGame;
 let collectionId = "";
 let collectionName = "Practice level";
-let levelsMessage = "Choose or download a collection to list its levels.";
+let levelsMessage = "Open a saved collection to list its levels.";
 
 function getLevelName(level, index) {
     if (typeof level === "string") {
@@ -458,32 +452,6 @@ function renderLevelList() {
     showMoreButton.hidden = shown.length >= indexes.length;
 }
 
-function renderCollectionDescription(collection) {
-    const description = typeof collection?.description === "string"
-        ? collection.description.trim()
-        : "";
-    const author = typeof collection?.author === "string"
-        ? collection.author.trim()
-        : "";
-    collectionDescriptionElement.textContent = description || "No description provided by LetsLogic.";
-    collectionAuthorElement.textContent = author ? `By ${author}` : "";
-}
-
-function populateCollectionSelect() {
-    collectionSelect.replaceChildren();
-    for (const collection of collections) {
-        const option = document.createElement("option");
-        option.value = collection.id;
-        const count = collection.level_count === undefined
-            ? ""
-            : ` · ${collection.level_count} levels`;
-        option.textContent = `${collection.name}${count}`;
-        collectionSelect.append(option);
-    }
-    collectionSelect.disabled = collections.length === 0;
-    downloadCollectionButton.disabled = collections.length === 0;
-}
-
 function populateSavedCollectionSelect() {
     savedCollectionSelect.replaceChildren();
     for (const collection of savedCollections) {
@@ -516,7 +484,6 @@ function activateCollection(collection, sourceMessage) {
     levelListHeading.textContent = collectionName;
     levelTotalElement.textContent = `${levels.length} levels`;
     levelsMessage = sourceMessage;
-    renderCollectionDescription(collection);
     solverResultElement.textContent = "";
     clearSolutionPlayback();
     updateSolverButtons();
@@ -606,31 +573,6 @@ async function solveCurrentLevel(showSolution = false) {
     }
 }
 
-async function loadLetsLogicCollections() {
-    try {
-        const response = await fetch("/api/sokoban/collections");
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.detail || "Could not load LetsLogic collections.");
-        }
-        const result = await response.json();
-        if (!Array.isArray(result.collections)) {
-            throw new Error("LetsLogic returned an unexpected collection list.");
-        }
-
-        collections = result.collections;
-        populateCollectionSelect();
-        collectionsStatusElement.textContent = `${collections.length} LetsLogic collections available.`;
-        if (collections.length) {
-            renderCollectionDescription(collections[0]);
-        }
-    } catch (error) {
-        collectionsStatusElement.textContent = `${error.message} You can still play the practice level.`;
-        collectionSelect.disabled = true;
-        downloadCollectionButton.disabled = true;
-    }
-}
-
 async function loadSavedCollections() {
     try {
         const response = await fetch("/api/sokoban/saved-collections");
@@ -649,52 +591,6 @@ async function loadSavedCollections() {
         savedCollectionSelect.disabled = true;
         openSavedCollectionButton.disabled = true;
         deleteSavedCollectionButton.disabled = true;
-    }
-}
-
-async function downloadSelectedCollection() {
-    const selected = collections.find(
-        (collection) => collection.id === collectionSelect.value,
-    );
-    if (!selected) return;
-
-    downloadCollectionButton.disabled = true;
-    collectionsStatusElement.textContent = `Importing ${selected.name}…`;
-    try {
-        const response = await fetch(
-            `/api/sokoban/collections/${encodeURIComponent(selected.id)}/download`,
-            {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    name: selected.name,
-                    description: selected.description,
-                    author: selected.author,
-                }),
-            },
-        );
-        if (!response.ok) {
-            const error = await response.json().catch(() => ({}));
-            throw new Error(error.detail || "Could not download this collection.");
-        }
-
-        const collection = await response.json();
-        if (!Array.isArray(collection.levels)) {
-            throw new Error("LetsLogic returned an unexpected level collection.");
-        }
-        const storageMessage = collection.storage === "vercel_blob"
-            ? `Saved to the server as ${collection.saved_file};`
-            : `Saved to data/sokoban/collections/${collection.saved_file}`;
-        collectionsStatusElement.textContent = `${storageMessage}`;
-        activateCollection(
-            collection,
-            `${collection.levels.length} levels downloaded and ready to play.`,
-        );
-        await loadSavedCollections();
-    } catch (error) {
-        collectionsStatusElement.textContent = error.message;
-    } finally {
-        downloadCollectionButton.disabled = collections.length === 0;
     }
 }
 
@@ -777,11 +673,6 @@ document.getElementById("restart-button").addEventListener("click", () => {
 nextButton.addEventListener("click", () => {
     if (selectedLevelIndex < levels.length - 1) selectLevel(selectedLevelIndex + 1);
 });
-collectionSelect.addEventListener("change", () => {
-    const collection = collections.find((entry) => entry.id === collectionSelect.value);
-    if (collection) renderCollectionDescription(collection);
-});
-downloadCollectionButton.addEventListener("click", downloadSelectedCollection);
 openSavedCollectionButton.addEventListener("click", openSavedCollection);
 checkLevelButton.addEventListener("click", () => solveCurrentLevel());
 showSolutionButton.addEventListener("click", () => solveCurrentLevel(true));
@@ -838,5 +729,4 @@ levelNameElement.textContent = PRACTICE_LEVEL.name;
 levelListHeading.textContent = PRACTICE_LEVEL.name;
 levelTotalElement.textContent = "Practice level";
 selectLevel(0);
-loadLetsLogicCollections();
 loadSavedCollections();
