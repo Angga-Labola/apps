@@ -26,6 +26,7 @@ const moveCountElement = document.getElementById("move-count");
 const pushCountElement = document.getElementById("push-count");
 const gameStatusElement = document.getElementById("game-status");
 const levelsStatusElement = document.getElementById("levels-status");
+const recordsStatusElement = document.getElementById("records-status");
 const levelTotalElement = document.getElementById("level-total");
 const levelListElement = document.getElementById("level-list");
 const showMoreButton = document.getElementById("show-more-button");
@@ -43,6 +44,9 @@ const previousButton = document.getElementById("previous-button");
 const nextButton = document.getElementById("next-button");
 
 let levels = [];
+let levelRecords = null;
+let recordsLoaded = false;
+let recordsError = "";
 let collections = [];
 let savedCollections = [];
 let selectedLevelIndex = -1;
@@ -65,6 +69,70 @@ function getLevelName(level, index) {
         return `${id}. ${name}`;
     }
     return String(name ?? id ?? `Level ${index + 1}`);
+}
+
+function formatLevelRecord(record) {
+    if (typeof record === "string") {
+        if (/^[udlr]+$/i.test(record)) {
+            const pushes = (record.match(/[UDLR]/g) || []).length;
+            return `Record: ${record.length} moves · ${pushes} pushes`;
+        }
+        return `Record: ${record}`;
+    }
+    if (!record || typeof record !== "object") return `Record: ${String(record)}`;
+
+    const solution = record.solution ?? record.solution_string;
+    if (typeof solution === "string" && /^[udlr]+$/i.test(solution)) {
+        const pushes = (solution.match(/[UDLR]/g) || []).length;
+        return `Record: ${solution.length} moves · ${pushes} pushes`;
+    }
+
+    const details = ["moves", "pushes", "score", "time", "record"]
+        .filter((key) => record[key] !== undefined && record[key] !== null)
+        .map((key) => `${key}: ${record[key]}`);
+    return details.length ? `Record: ${details.join(" · ")}` : "Record available";
+}
+
+function getLevelRecord(level) {
+    if (!recordsLoaded) return "Loading record…";
+    if (recordsError) return "Record unavailable";
+
+    const levelId = typeof level === "object" && level
+        ? level.id ?? level.level_id ?? level.number
+        : null;
+    if (levelId === null || levelId === undefined) return "No record";
+
+    let record;
+    const recordEntries = levelRecords && typeof levelRecords === "object"
+        ? levelRecords.records
+        : null;
+    const recordForLevel = (entry) => {
+        if (!entry || typeof entry !== "object") return false;
+        const recordLevel = entry.level;
+        const recordLevelId = entry.level_id
+            ?? entry.levelId
+            ?? (recordLevel && typeof recordLevel === "object"
+                ? recordLevel.id ?? recordLevel.level_id
+                : recordLevel)
+            ?? entry.id;
+        return recordLevelId !== undefined && String(recordLevelId) === String(levelId);
+    };
+    if (Array.isArray(levelRecords)) {
+        record = levelRecords.find(recordForLevel);
+    } else if (levelRecords && typeof levelRecords === "object") {
+        if (Array.isArray(recordEntries)) {
+            record = recordEntries.find(recordForLevel);
+        } else {
+            record = recordEntries && typeof recordEntries === "object"
+                ? recordEntries[String(levelId)]
+                : levelRecords[String(levelId)];
+        }
+    }
+
+    if (record === null || record === undefined || record === false || record === "") {
+        return "No record";
+    }
+    return formatLevelRecord(record);
 }
 
 function getLevelMap(level) {
@@ -363,7 +431,13 @@ function renderLevelList() {
         name.textContent = getLevelName(levels[index], index);
         const number = document.createElement("small");
         number.textContent = `#${index + 1}`;
-        button.append(name, number);
+        const details = document.createElement("span");
+        details.className = "level-list-details";
+        const record = document.createElement("small");
+        record.className = "level-record";
+        record.textContent = getLevelRecord(levels[index]);
+        details.append(number, record);
+        button.append(name, details);
         item.append(button);
         levelListElement.append(item);
     }
@@ -468,6 +542,30 @@ async function loadLetsLogicCollections() {
         collectionSelect.disabled = true;
         downloadCollectionButton.disabled = true;
     }
+}
+
+async function loadLetsLogicRecords() {
+    try {
+        const response = await fetch("/api/sokoban/records");
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || "Could not load LetsLogic records.");
+        }
+        const result = await response.json();
+        if (!Array.isArray(result.records)
+            && (!result.records || typeof result.records !== "object")) {
+            throw new Error("LetsLogic returned an unexpected records list.");
+        }
+
+        levelRecords = result.records;
+        recordsLoaded = true;
+        recordsStatusElement.textContent = "LetsLogic records loaded.";
+    } catch (error) {
+        recordsError = error.message;
+        recordsLoaded = true;
+        recordsStatusElement.textContent = `Could not load LetsLogic records: ${error.message}`;
+    }
+    renderLevelList();
 }
 
 async function loadSavedCollections() {
@@ -674,4 +772,5 @@ levelListHeading.textContent = PRACTICE_LEVEL.name;
 levelTotalElement.textContent = "Practice level";
 selectLevel(0);
 loadLetsLogicCollections();
+loadLetsLogicRecords();
 loadSavedCollections();

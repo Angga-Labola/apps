@@ -396,6 +396,25 @@
   width: 100%;
 }
 
+.level-list button > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.level-list-details {
+  align-items: flex-end;
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.level-list-details .level-record {
+  max-width: 220px;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
 .level-list button:hover,
 .level-list button[aria-current="true"] {
   background: var(--soko-accent-dark);
