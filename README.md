@@ -14,19 +14,17 @@ immediately load its levels into the game. Local runs save JSON files in
 `data/sokoban/collections/`; Vercel deployments save them to Vercel Blob.
 Descriptions and authors are shown when available from LetsLogic. Saved
 collections appear in the **Saved collections** selector and can be reopened
-or deleted. Each listed level also shows its record from the LetsLogic API
-account associated with `SOKOBAN_KEY`, or indicates when no record exists.
-Use the **Fullscreen** button to expand the game to the browser view; the board
-follows the player as you move or undo. A built-in practice board remains
-available when the API key is missing or LetsLogic cannot be reached.
+or deleted. Use the **Fullscreen** button to expand the game to the browser
+view; the board follows the player as you move or undo. A built-in practice
+board remains available when the API key is missing or LetsLogic cannot be
+reached.
 
 Set `SOKOBAN_KEY` in the local `.env` file for development or as an environment
 variable in Vercel. `SOKOBAN_COLLECTION_ID` sets the default collection for the
 legacy `/api/sokoban/levels` endpoint; it defaults to `550`.
 `SOKOBAN_COLLECTIONS_DIR` can override the local saved-collection directory.
 The `/api/sokoban/health` endpoint reports whether the LetsLogic key is
-configured without returning the key. `/api/sokoban/records` retrieves the
-account's completed-level records from LetsLogic.
+configured without returning the key.
 
 For Vercel deployments, create a Blob store and connect it to the project.
 The Vercel Blob Python SDK uses the connected store's Vercel credentials; a
@@ -54,7 +52,7 @@ remains in the browser.
   `static/bible-reader.js` and the Giscus client.
 - `static/bible-reader.js` loads the book catalog, fetches chapter HTML, updates
   the controls, opens selected commentary in a new tab, and handles navigation.
-- `sokoban_router.py` contains the Sokoban API router, LetsLogic integration, and
+- `sokoban.py` contains the Sokoban API router, LetsLogic integration, and
   local/Vercel Blob collection storage. `app.py` includes that router with the
   other application routes.
 - `templates/bible/<BOOK>/<BOOK>_<CHAPTER>.html` contains the source HTML for

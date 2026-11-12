@@ -1,9 +1,7 @@
-import io
 import json
 import os
 import re
 import tempfile
-import zipfile
 from pathlib import Path
 from typing import Literal
 
@@ -42,7 +40,7 @@ def sokoban_health():
     return {"status": "ok", "letslogic_configured": bool(os.getenv("SOKOBAN_KEY"))}
 
 
-def request_letslogic(endpoint: str) -> requests.Response:
+def post_to_letslogic(endpoint: str) -> object:
     api_key = os.getenv("SOKOBAN_KEY")
     if not api_key:
         raise HTTPException(
@@ -67,11 +65,6 @@ def request_letslogic(endpoint: str) -> requests.Response:
             status_code=502,
             detail="The LetsLogic service returned an error.",
         )
-    return response
-
-
-def post_to_letslogic(endpoint: str) -> object:
-    response = request_letslogic(endpoint)
 
     try:
         payload = response.json()
@@ -81,25 +74,6 @@ def post_to_letslogic(endpoint: str) -> object:
             detail="The LetsLogic service returned invalid JSON.",
         ) from error
 
-    return payload
-
-
-def fetch_sokoban_records() -> object:
-    response = request_letslogic("records")
-    try:
-        with zipfile.ZipFile(io.BytesIO(response.content)) as archive:
-            payload = json.loads(archive.read("records.json"))
-    except (KeyError, UnicodeDecodeError, json.JSONDecodeError, zipfile.BadZipFile) as error:
-        raise HTTPException(
-            status_code=502,
-            detail="The LetsLogic service returned invalid records data.",
-        ) from error
-
-    if not isinstance(payload, (list, dict)):
-        raise HTTPException(
-            status_code=502,
-            detail="The LetsLogic service returned an unexpected records list.",
-        )
     return payload
 
 
@@ -457,11 +431,6 @@ def sokoban_levels():
         "collection_id": SOKOBAN_COLLECTION_ID,
         "levels": fetch_sokoban_levels(),
     }
-
-
-@router.get("/api/sokoban/records")
-def sokoban_records():
-    return {"records": fetch_sokoban_records()}
 
 
 @router.get("/api/sokoban/levels/download")
