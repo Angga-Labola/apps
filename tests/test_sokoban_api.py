@@ -6,21 +6,21 @@ from unittest.mock import Mock, patch
 
 from fastapi.exceptions import HTTPException
 
-import app
+import sokoban
 
 
 class SokobanApiTests(unittest.TestCase):
     @patch.dict(os.environ, {"SOKOBAN_KEY": "test-key"})
-    @patch("app.requests.post")
+    @patch("sokoban.requests.post")
     def test_fetch_levels_posts_key_and_returns_level_list(self, post):
         levels = [{"id": 1, "name": "First level"}]
         response = Mock(ok=True)
         response.json.return_value = levels
         post.return_value = response
 
-        self.assertEqual(app.fetch_sokoban_levels(), levels)
+        self.assertEqual(sokoban.fetch_sokoban_levels(), levels)
         post.assert_called_once_with(
-            f"{app.LETSLOGIC_API_URL}/collection/{app.SOKOBAN_COLLECTION_ID}",
+            f"{sokoban.LETSLOGIC_API_URL}/collection/{sokoban.SOKOBAN_COLLECTION_ID}",
             data={"key": "test-key"},
             timeout=8,
         )
@@ -28,54 +28,54 @@ class SokobanApiTests(unittest.TestCase):
     @patch.dict(os.environ, {}, clear=True)
     def test_fetch_levels_reports_missing_api_key(self):
         with self.assertRaises(HTTPException) as raised:
-            app.fetch_sokoban_levels()
+            sokoban.fetch_sokoban_levels()
 
         self.assertEqual(raised.exception.status_code, 503)
 
     @patch.dict(os.environ, {"SOKOBAN_KEY": "test-key"})
-    @patch("app.requests.post")
+    @patch("sokoban.requests.post")
     def test_fetch_levels_unwraps_documented_levels_object(self, post):
         response = Mock(ok=True)
         response.json.return_value = {"levels": [{"id": 3}]}
         post.return_value = response
 
-        self.assertEqual(app.fetch_sokoban_levels(), [{"id": 3}])
+        self.assertEqual(sokoban.fetch_sokoban_levels(), [{"id": 3}])
 
     @patch.dict(os.environ, {"SOKOBAN_KEY": "test-key"})
-    @patch("app.requests.post")
+    @patch("sokoban.requests.post")
     def test_fetch_levels_surfaces_upstream_errors(self, post):
         response = Mock(ok=False)
         post.return_value = response
 
         with self.assertRaises(HTTPException) as raised:
-            app.fetch_sokoban_levels()
+            sokoban.fetch_sokoban_levels()
 
         self.assertEqual(raised.exception.status_code, 502)
 
     @patch.dict(os.environ, {"SOKOBAN_KEY": "test-key"})
-    @patch("app.requests.post")
+    @patch("sokoban.requests.post")
     def test_collection_download_returns_json_attachment(self, post):
         levels = [{"id": 8, "name": "Downloaded level"}]
         response = Mock(ok=True)
         response.json.return_value = levels
         post.return_value = response
 
-        download = app.download_sokoban_collection()
+        download = sokoban.download_sokoban_collection()
 
         self.assertIn("attachment;", download.headers["content-disposition"])
         self.assertEqual(json.loads(download.body), {
-            "collection_id": app.SOKOBAN_COLLECTION_ID,
+            "collection_id": sokoban.SOKOBAN_COLLECTION_ID,
             "levels": levels,
         })
 
-    @patch("app.fetch_sokoban_collections")
+    @patch("sokoban.fetch_sokoban_collections")
     def test_collection_list_returns_names_and_ids(self, fetch_collections):
         fetch_collections.return_value = [
             {"id": 12, "name": "Small puzzles", "levels": [1, 2]},
             {"id": "../outside", "name": "Invalid"},
         ]
 
-        result = app.sokoban_collections()
+        result = sokoban.sokoban_collections()
 
         self.assertEqual(result["collections"], [{
             "id": "12",
@@ -85,21 +85,21 @@ class SokobanApiTests(unittest.TestCase):
             "level_count": 2,
         }])
 
-    @patch("app.fetch_sokoban_levels", return_value=[{"id": 1, "map": "@$."}])
+    @patch("sokoban.fetch_sokoban_levels", return_value=[{"id": 1, "map": "@$."}])
     @patch.dict(os.environ, {}, clear=True)
     def test_download_saves_and_returns_playable_collection(self, _fetch_levels):
         with tempfile.TemporaryDirectory() as temporary_directory:
-            with patch.object(app, "SOKOBAN_COLLECTIONS_DIR", app.Path(temporary_directory)):
-                downloaded = app.save_sokoban_collection(
+            with patch.object(sokoban, "SOKOBAN_COLLECTIONS_DIR", sokoban.Path(temporary_directory)):
+                downloaded = sokoban.save_sokoban_collection(
                     "44",
-                    app.CollectionDownloadRequest(
+                    sokoban.CollectionDownloadRequest(
                         name="Test collection",
                         description="A short collection description.",
                         author="Puzzle author",
                     ),
                 )
-                saved = app.get_saved_sokoban_collection("44")
-                listed = app.list_saved_sokoban_collections()
+                saved = sokoban.get_saved_sokoban_collection("44")
+                listed = sokoban.list_saved_sokoban_collections()
 
         self.assertEqual(downloaded["storage"], "local")
         self.assertEqual(downloaded["saved_file"], "44.json")
@@ -115,7 +115,7 @@ class SokobanApiTests(unittest.TestCase):
 
     def test_download_rejects_non_numeric_collection_ids(self):
         with self.assertRaises(HTTPException) as raised:
-            app.save_sokoban_collection("../outside")
+            sokoban.save_sokoban_collection("../outside")
 
         self.assertEqual(raised.exception.status_code, 400)
 
@@ -123,12 +123,12 @@ class SokobanApiTests(unittest.TestCase):
         uploaded = Mock(pathname="sokoban-collections/44.json")
         with (
             patch.dict(os.environ, {"VERCEL": "1"}),
-            patch("app.fetch_sokoban_levels", return_value=[{"id": 1, "map": "@$."}]),
-            patch("app.vercel_blob.put_blob", return_value=uploaded) as put_blob,
+            patch("sokoban.fetch_sokoban_levels", return_value=[{"id": 1, "map": "@$."}]),
+            patch("sokoban.vercel_blob.put_blob", return_value=uploaded) as put_blob,
         ):
-            result = app.save_sokoban_collection(
+            result = sokoban.save_sokoban_collection(
                 "44",
-                app.CollectionDownloadRequest(name="Test collection"),
+                sokoban.CollectionDownloadRequest(name="Test collection"),
             )
 
         self.assertEqual(result["storage"], "vercel_blob")
@@ -145,31 +145,31 @@ class SokobanApiTests(unittest.TestCase):
                 os.environ,
                 {"VERCEL": "1", "SOKOBAN_BLOB_ACCESS": "private"},
             ),
-            patch("app.fetch_sokoban_levels", return_value=[{"id": 1, "map": "@$."}]),
-            patch("app.vercel_blob.put_blob", return_value=uploaded) as put_blob,
+            patch("sokoban.fetch_sokoban_levels", return_value=[{"id": 1, "map": "@$."}]),
+            patch("sokoban.vercel_blob.put_blob", return_value=uploaded) as put_blob,
         ):
-            app.save_sokoban_collection(
+            sokoban.save_sokoban_collection(
                 "44",
-                app.CollectionDownloadRequest(name="Test collection"),
+                sokoban.CollectionDownloadRequest(name="Test collection"),
             )
 
         self.assertEqual(put_blob.call_args.kwargs["access"], "private")
 
     def test_vercel_download_reports_blob_error_details(self):
-        error = app.BlobError(
+        error = sokoban.BlobError(
             "The store is suspended.",
             status_code=400,
             code="store_suspended",
         )
         with (
             patch.dict(os.environ, {"VERCEL": "1"}),
-            patch("app.fetch_sokoban_levels", return_value=[{"id": 1, "map": "@$."}]),
-            patch("app.vercel_blob.put_blob", side_effect=error),
+            patch("sokoban.fetch_sokoban_levels", return_value=[{"id": 1, "map": "@$."}]),
+            patch("sokoban.vercel_blob.put_blob", side_effect=error),
         ):
             with self.assertRaises(HTTPException) as raised:
-                app.save_sokoban_collection(
+                sokoban.save_sokoban_collection(
                     "44",
-                    app.CollectionDownloadRequest(name="Test collection"),
+                    sokoban.CollectionDownloadRequest(name="Test collection"),
                 )
 
         self.assertEqual(raised.exception.status_code, 502)
@@ -187,18 +187,18 @@ class SokobanApiTests(unittest.TestCase):
         with (
             patch.dict(os.environ, {"VERCEL": "1"}),
             patch(
-                "app.vercel_blob.query_blobs",
+                "sokoban.vercel_blob.query_blobs",
                 return_value=[
                     Mock(pathname="sokoban-collections/44.json"),
                     Mock(pathname="sokoban-collections/invalid.json"),
                 ],
             ),
             patch(
-                "app.vercel_blob.get_blob",
+                "sokoban.vercel_blob.get_blob",
                 return_value=Mock(body=json.dumps(saved).encode("utf-8")),
             ) as get_blob,
         ):
-            result = app.list_saved_sokoban_collections()
+            result = sokoban.list_saved_sokoban_collections()
 
         self.assertEqual(result["storage"], "vercel_blob")
         self.assertEqual(result["collections"], [{
@@ -218,13 +218,13 @@ class SokobanApiTests(unittest.TestCase):
         with (
             patch.dict(os.environ, {"VERCEL": "1"}),
             patch(
-                "app.vercel_blob.get_blob",
+                "sokoban.vercel_blob.get_blob",
                 return_value=Mock(body=json.dumps(saved).encode("utf-8")),
             ) as get_blob,
-            patch("app.vercel_blob.delete_blob") as delete_blob,
+            patch("sokoban.vercel_blob.delete_blob") as delete_blob,
         ):
-            opened = app.get_saved_sokoban_collection("44")
-            deleted = app.delete_saved_sokoban_collection("44")
+            opened = sokoban.get_saved_sokoban_collection("44")
+            deleted = sokoban.delete_saved_sokoban_collection("44")
 
         self.assertEqual(opened, saved)
         self.assertEqual(deleted, {"deleted": "44", "storage": "vercel_blob"})
@@ -236,13 +236,13 @@ class SokobanApiTests(unittest.TestCase):
 
     def test_local_saved_collection_can_be_deleted(self):
         with tempfile.TemporaryDirectory() as temporary_directory:
-            path = app.Path(temporary_directory) / "44.json"
+            path = sokoban.Path(temporary_directory) / "44.json"
             path.write_text('{"levels": []}', encoding="utf-8")
             with (
                 patch.dict(os.environ, {}, clear=True),
-                patch.object(app, "SOKOBAN_COLLECTIONS_DIR", app.Path(temporary_directory)),
+                patch.object(sokoban, "SOKOBAN_COLLECTIONS_DIR", sokoban.Path(temporary_directory)),
             ):
-                result = app.delete_saved_sokoban_collection("44")
+                result = sokoban.delete_saved_sokoban_collection("44")
 
             self.assertFalse(path.exists())
 
@@ -250,7 +250,7 @@ class SokobanApiTests(unittest.TestCase):
 
     def test_delete_rejects_non_numeric_collection_ids(self):
         with self.assertRaises(HTTPException) as raised:
-            app.delete_saved_sokoban_collection("../outside")
+            sokoban.delete_saved_sokoban_collection("../outside")
 
         self.assertEqual(raised.exception.status_code, 400)
 

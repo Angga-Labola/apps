@@ -52,6 +52,9 @@ remains in the browser.
   `static/bible-reader.js` and the Giscus client.
 - `static/bible-reader.js` loads the book catalog, fetches chapter HTML, updates
   the controls, opens selected commentary in a new tab, and handles navigation.
+- `sokoban.py` contains the Sokoban API router, LetsLogic integration, and
+  local/Vercel Blob collection storage. `app.py` includes that router with the
+  other application routes.
 - `templates/bible/<BOOK>/<BOOK>_<CHAPTER>.html` contains the source HTML for
   each chapter. For example, Genesis chapter 2 is
   `templates/bible/GEN/GEN_2.html`.
