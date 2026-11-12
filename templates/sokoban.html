@@ -37,8 +37,11 @@
                     <button id="check-level-button" class="game-button secondary" type="button" disabled>
                         Check
                     </button>
-                    <button id="show-solution-button" class="game-button" type="button" disabled>
+                    <button id="show-solution-button" class="game-button secondary" type="button" disabled>
                         Show solution
+                    </button>
+                    <button type="button" class="game-button secondary" onclick="window.location.href='/sokoban/import_collections';">
+                    Import
                     </button>
                 </div>
 
@@ -81,9 +84,6 @@
                     </div>
                     <span id="level-total" class="level-total">Loading collections…</span>
                 </div>
-                <a class="game-button secondary import-collection-link" href="/sokoban/import_collections">
-                    Import a collection
-                </a>
                 <label class="level-search-label" for="saved-collection-select">Saved collections</label>
                 <div class="collection-controls saved-collection-controls">
                     <select id="saved-collection-select" aria-label="Choose a saved collection" disabled>
