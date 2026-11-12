@@ -36,11 +36,13 @@ SOKOBAN_COLLECTIONS_DIR = Path(
 def sokoban_home():
     return FileResponse(BASE_DIR / "templates" / "sokoban.html")
 
-
 @router.get("/api/sokoban/health")
 def sokoban_health():
     return {"status": "ok", "letslogic_configured": bool(os.getenv("SOKOBAN_KEY"))}
 
+@router.get("/sokoban/import_collections")
+def sokoban_import_collections():
+    return FileResponse(BASE_DIR / "templates" / "sokoban_import.html")
 
 def post_to_letslogic(endpoint: str) -> object:
     api_key = os.getenv("SOKOBAN_KEY")

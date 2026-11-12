@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="dark">
+    <meta name="theme-color" content="#111714">
+    <link rel="stylesheet" href="/static/styles.css">
+    <link rel="stylesheet" href="/static/sokoban.css">
+    <title>Warehouse Keeper</title>
+</head>
+<body class="sokoban-app">
+    <div id="navbar-placeholder"></div>
+    <main class="sokoban-main">
+        <div class="sokoban-layout">
+            <aside class="levels-panel" aria-label="LetsLogic collections and levels">
+                <div class="levels-heading">
+                    <div>
+                        <span class="panel-label">COLLECTION LIBRARY</span>
+                        <h2>Import</h2>
+                    </div>
+                    <span id="level-total" class="level-total">Loading collections…</span>
+                </div>
+                <label class="level-search-label" for="collection-select">LetsLogic collections</label>
+                <div class="collection-controls">
+                    <select id="collection-select" aria-label="Choose a LetsLogic collection" disabled>
+                        <option>Loading collections…</option>
+                    </select>
+                    <button id="download-collection-button" class="game-button" type="button" disabled>
+                        Import
+                    </button>
+                </div>
+                <p id="collections-status" class="levels-status" role="status" aria-live="polite">
+                    Connecting to LetsLogic…
+                </p>
+                <article class="collection-description" aria-live="polite">
+                    <span class="panel-label">ABOUT THIS COLLECTION</span>
+                    <p id="collection-description">Choose a collection to see its description.</p>
+                    <span id="collection-author" class="collection-author"></span>
+                </article>
+            </aside>
+        </div>
+    </main>
+    <script src="/static/navbar-without-sidebar.js" defer></script>
+    <script src="/static/sokoban.js" defer></script>
+</body>
+</html>
