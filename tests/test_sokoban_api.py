@@ -119,6 +119,103 @@ class SokobanApiTests(unittest.TestCase):
 
         self.assertEqual(raised.exception.status_code, 400)
 
+    def test_vercel_download_saves_to_blob(self):
+        uploaded = Mock(pathname="sokoban-collections/44.json")
+        with (
+            patch.dict(os.environ, {"VERCEL": "1"}),
+            patch("app.fetch_sokoban_levels", return_value=[{"id": 1, "map": "@$."}]),
+            patch("app.vercel_blob.put_blob", return_value=uploaded) as put_blob,
+        ):
+            result = app.save_sokoban_collection(
+                "44",
+                app.CollectionDownloadRequest(name="Test collection"),
+            )
+
+        self.assertEqual(result["storage"], "vercel_blob")
+        self.assertEqual(result["saved_file"], "sokoban-collections/44.json")
+        put_blob.assert_called_once()
+        self.assertEqual(put_blob.call_args.args[0], "sokoban-collections/44.json")
+        self.assertEqual(put_blob.call_args.kwargs["access"], "public")
+        self.assertTrue(put_blob.call_args.kwargs["allow_overwrite"])
+
+    def test_vercel_saved_collections_are_listed_from_blob(self):
+        saved = {
+            "collection_id": "44",
+            "name": "Test collection",
+            "description": "A description",
+            "author": "Puzzle author",
+            "levels": [{"id": 1}, {"id": 2}],
+        }
+        with (
+            patch.dict(os.environ, {"VERCEL": "1"}),
+            patch(
+                "app.vercel_blob.query_blobs",
+                return_value=[
+                    Mock(pathname="sokoban-collections/44.json"),
+                    Mock(pathname="sokoban-collections/invalid.json"),
+                ],
+            ),
+            patch(
+                "app.vercel_blob.get_blob",
+                return_value=Mock(body=json.dumps(saved).encode("utf-8")),
+            ) as get_blob,
+        ):
+            result = app.list_saved_sokoban_collections()
+
+        self.assertEqual(result["storage"], "vercel_blob")
+        self.assertEqual(result["collections"], [{
+            "collection_id": "44",
+            "name": "Test collection",
+            "description": "A description",
+            "author": "Puzzle author",
+            "level_count": 2,
+        }])
+        get_blob.assert_called_once_with(
+            "sokoban-collections/44.json",
+            access="public",
+        )
+
+    def test_vercel_saved_collection_can_be_opened_and_deleted(self):
+        saved = {"collection_id": "44", "levels": [{"id": 1}]}
+        with (
+            patch.dict(os.environ, {"VERCEL": "1"}),
+            patch(
+                "app.vercel_blob.get_blob",
+                return_value=Mock(body=json.dumps(saved).encode("utf-8")),
+            ) as get_blob,
+            patch("app.vercel_blob.delete_blob") as delete_blob,
+        ):
+            opened = app.get_saved_sokoban_collection("44")
+            deleted = app.delete_saved_sokoban_collection("44")
+
+        self.assertEqual(opened, saved)
+        self.assertEqual(deleted, {"deleted": "44", "storage": "vercel_blob"})
+        get_blob.assert_called_once_with(
+            "sokoban-collections/44.json",
+            access="public",
+        )
+        delete_blob.assert_called_once_with("sokoban-collections/44.json")
+
+    def test_local_saved_collection_can_be_deleted(self):
+        with tempfile.TemporaryDirectory() as temporary_directory:
+            path = app.Path(temporary_directory) / "44.json"
+            path.write_text('{"levels": []}', encoding="utf-8")
+            with (
+                patch.dict(os.environ, {}, clear=True),
+                patch.object(app, "SOKOBAN_COLLECTIONS_DIR", app.Path(temporary_directory)),
+            ):
+                result = app.delete_saved_sokoban_collection("44")
+
+            self.assertFalse(path.exists())
+
+        self.assertEqual(result, {"deleted": "44", "storage": "local"})
+
+    def test_delete_rejects_non_numeric_collection_ids(self):
+        with self.assertRaises(HTTPException) as raised:
+            app.delete_saved_sokoban_collection("../outside")
+
+        self.assertEqual(raised.exception.status_code, 400)
+
 
 if __name__ == "__main__":
     unittest.main()

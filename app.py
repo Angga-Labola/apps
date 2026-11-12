@@ -10,6 +10,8 @@ from fastapi.responses import FileResponse, Response
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import requests
+from vercel.blob import BlobCredentialsError, BlobError, BlobNotFoundError
+from vercel.blob import sync as vercel_blob
 from encryption import encrypt_string
 from decryption import decrypt_string
 
@@ -22,12 +24,11 @@ app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="stat
 
 SOKOBAN_COLLECTION_ID = os.getenv("SOKOBAN_COLLECTION_ID", "550")
 LETSLOGIC_API_URL = "https://letslogic.com/api/v1"
+VERCEL_BLOB_COLLECTIONS_PREFIX = "sokoban-collections/"
 SOKOBAN_COLLECTIONS_DIR = Path(
     os.getenv(
         "SOKOBAN_COLLECTIONS_DIR",
-        "/tmp/sokoban-collections"
-        if os.getenv("VERCEL")
-        else BASE_DIR / "data" / "sokoban" / "collections",
+        BASE_DIR / "data" / "sokoban" / "collections",
     )
 )
 
@@ -147,6 +148,45 @@ def saved_collections_directory() -> Path:
     return SOKOBAN_COLLECTIONS_DIR
 
 
+def uses_vercel_blob() -> bool:
+    return bool(os.getenv("VERCEL"))
+
+
+def vercel_collection_path(collection_id: str) -> str:
+    return f"{VERCEL_BLOB_COLLECTIONS_PREFIX}{collection_id}.json"
+
+
+def read_vercel_collection(collection_id: str) -> dict[str, object]:
+    try:
+        result = vercel_blob.get_blob(
+            vercel_collection_path(collection_id),
+            access="public",
+        )
+    except BlobNotFoundError as error:
+        raise HTTPException(status_code=404, detail="Saved collection not found.") from error
+    except BlobCredentialsError as error:
+        raise HTTPException(
+            status_code=503,
+            detail="Vercel Blob is not configured for this deployment.",
+        ) from error
+    except BlobError as error:
+        raise HTTPException(
+            status_code=502,
+            detail="The saved collection could not be read from Vercel Blob.",
+        ) from error
+
+    try:
+        collection = json.loads(result.body)
+    except (UnicodeDecodeError, json.JSONDecodeError) as error:
+        raise HTTPException(
+            status_code=500,
+            detail="The saved collection file is invalid.",
+        ) from error
+    if not isinstance(collection, dict) or not isinstance(collection.get("levels"), list):
+        raise HTTPException(status_code=500, detail="The saved collection file is invalid.")
+    return collection
+
+
 @app.get("/api/sokoban/collections")
 def sokoban_collections():
     collections = []
@@ -198,6 +238,32 @@ def save_sokoban_collection(
         "author": payload.author.strip() if payload and payload.author else "",
         "levels": levels,
     }
+    if uses_vercel_blob():
+        pathname = vercel_collection_path(collection_id)
+        try:
+            result = vercel_blob.put_blob(
+                pathname,
+                json.dumps(collection, ensure_ascii=False, indent=2).encode("utf-8"),
+                access="public",
+                content_type="application/json",
+                allow_overwrite=True,
+            )
+        except BlobCredentialsError as error:
+            raise HTTPException(
+                status_code=503,
+                detail="Vercel Blob is not configured for this deployment.",
+            ) from error
+        except BlobError as error:
+            raise HTTPException(
+                status_code=502,
+                detail="The downloaded collection could not be saved to Vercel Blob.",
+            ) from error
+        return {
+            **collection,
+            "saved_file": result.pathname,
+            "storage": "vercel_blob",
+        }
+
     destination = saved_collections_directory() / f"{collection_id}.json"
     temporary_path = None
     try:
@@ -224,12 +290,44 @@ def save_sokoban_collection(
     return {
         **collection,
         "saved_file": destination.name,
-        "storage": "temporary" if os.getenv("VERCEL") else "local",
+        "storage": "local",
     }
 
 
 @app.get("/api/sokoban/saved-collections")
 def list_saved_sokoban_collections():
+    if uses_vercel_blob():
+        try:
+            files = vercel_blob.query_blobs(prefix=VERCEL_BLOB_COLLECTIONS_PREFIX)
+            collections = []
+            for file in files:
+                match = re.fullmatch(
+                    rf"{re.escape(VERCEL_BLOB_COLLECTIONS_PREFIX)}(\d{{1,12}})\.json",
+                    file.pathname,
+                )
+                if match is None:
+                    continue
+                collection_id = match.group(1)
+                collection = read_vercel_collection(collection_id)
+                collections.append({
+                    "collection_id": collection_id,
+                    "name": collection_name(collection, collection_id),
+                    "description": collection_text(collection, "description"),
+                    "author": collection_text(collection, "author"),
+                    "level_count": len(collection["levels"]),
+                })
+        except BlobCredentialsError as error:
+            raise HTTPException(
+                status_code=503,
+                detail="Vercel Blob is not configured for this deployment.",
+            ) from error
+        except BlobError as error:
+            raise HTTPException(
+                status_code=502,
+                detail="Saved Sokoban collections could not be listed from Vercel Blob.",
+            ) from error
+        return {"collections": collections, "storage": "vercel_blob"}
+
     directory = saved_collections_directory()
     try:
         files = sorted(directory.glob("*.json"), key=lambda file: file.name)
@@ -255,7 +353,7 @@ def list_saved_sokoban_collections():
 
     return {
         "collections": collections,
-        "storage": "temporary" if os.getenv("VERCEL") else "local",
+        "storage": "local",
     }
 
 
@@ -263,6 +361,9 @@ def list_saved_sokoban_collections():
 def get_saved_sokoban_collection(collection_id: str):
     if not re.fullmatch(r"\d{1,12}", collection_id):
         raise HTTPException(status_code=400, detail="Invalid collection ID.")
+    if uses_vercel_blob():
+        return read_vercel_collection(collection_id)
+
     path = SOKOBAN_COLLECTIONS_DIR / f"{collection_id}.json"
     try:
         collection = json.loads(path.read_text(encoding="utf-8"))
@@ -276,6 +377,39 @@ def get_saved_sokoban_collection(collection_id: str):
     if not isinstance(collection, dict) or not isinstance(collection.get("levels"), list):
         raise HTTPException(status_code=500, detail="The saved collection file is invalid.")
     return collection
+
+
+@app.delete("/api/sokoban/saved-collections/{collection_id}")
+def delete_saved_sokoban_collection(collection_id: str):
+    if not re.fullmatch(r"\d{1,12}", collection_id):
+        raise HTTPException(status_code=400, detail="Invalid collection ID.")
+
+    if uses_vercel_blob():
+        try:
+            vercel_blob.delete_blob(vercel_collection_path(collection_id))
+        except BlobCredentialsError as error:
+            raise HTTPException(
+                status_code=503,
+                detail="Vercel Blob is not configured for this deployment.",
+            ) from error
+        except BlobError as error:
+            raise HTTPException(
+                status_code=502,
+                detail="The saved collection could not be deleted from Vercel Blob.",
+            ) from error
+        return {"deleted": collection_id, "storage": "vercel_blob"}
+
+    path = SOKOBAN_COLLECTIONS_DIR / f"{collection_id}.json"
+    try:
+        path.unlink()
+    except FileNotFoundError as error:
+        raise HTTPException(status_code=404, detail="Saved collection not found.") from error
+    except OSError as error:
+        raise HTTPException(
+            status_code=500,
+            detail="The saved collection could not be deleted.",
+        ) from error
+    return {"deleted": collection_id, "storage": "local"}
 
 
 @app.get("/api/sokoban/levels")

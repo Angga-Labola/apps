@@ -18,3 +18,4 @@ typing-extensions==4.16.0
 typing-inspection==0.4.4
 urllib3==2.8.0
 uvicorn==0.54.0
+vercel-blob==0.5.1

@@ -297,8 +297,11 @@
   grid-template-columns: minmax(0, 1fr) auto;
 }
 
-.collection-controls select,
-#level-search {
+.saved-collection-controls {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.collection-controls select {
   background: #101713;
   border: 1px solid var(--soko-border);
   border-radius: 9px;
@@ -310,7 +313,6 @@
 }
 
 .collection-controls select:focus,
-#level-search:focus,
 .level-list button:focus-visible,
 .game-button:focus-visible,
 .text-button:focus-visible,
@@ -514,6 +516,10 @@
   }
 
   .collection-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .saved-collection-controls {
     grid-template-columns: 1fr;
   }
 

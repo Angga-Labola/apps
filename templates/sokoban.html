@@ -86,12 +86,15 @@
                     <span id="collection-author" class="collection-author"></span>
                 </article>
                 <label class="level-search-label" for="saved-collection-select">Saved collections</label>
-                <div class="collection-controls">
+                <div class="collection-controls saved-collection-controls">
                     <select id="saved-collection-select" aria-label="Choose a saved collection" disabled>
                         <option>No saved collections</option>
                     </select>
                     <button id="open-saved-collection-button" class="game-button secondary" type="button" disabled>
                         Open
+                    </button>
+                    <button id="delete-saved-collection-button" class="game-button secondary" type="button" disabled>
+                        Delete
                     </button>
                 </div>
                 <p id="saved-collections-status" class="levels-status" role="status" aria-live="polite">
@@ -99,8 +102,6 @@
                 </p>
                 <div class="levels-divider"></div>
                 <h3 id="level-list-heading" class="level-list-heading">Levels</h3>
-                <label class="level-search-label" for="level-search">Find a level</label>
-                <input id="level-search" type="search" placeholder="Search by name or number" autocomplete="off">
                 <p id="levels-status" class="levels-status" role="status" aria-live="polite">
                     Choose or download a collection to list its levels.
                 </p>
@@ -108,7 +109,7 @@
                     <ol id="level-list" class="level-list" aria-label="Available levels"></ol>
                     <button id="show-more-button" class="show-more-button" type="button" hidden>Show more levels</button>
                 </div>
-                <p class="download-note">Imported collections are saved in <code>data/sokoban/collections/</code> locally and can be reopened here. Your API key stays on the server. Vercel’s file storage is temporary.</p>
+                <p class="download-note">Imported collections are saved locally in <code>data/sokoban/collections/</code> or in Vercel Blob when deployed. Your API key stays on the server.</p>
             </aside>
         </div>
         <footer class="sokoban-footer">

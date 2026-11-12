@@ -9,14 +9,15 @@ the HTML that the reader inserts into the page.
 
 The Sokoban game is served at `/sokoban`. It lists collections from LetsLogic
 through the FastAPI backend, so the LetsLogic API key is never sent to the
-browser. Choose a collection and click **Import & play** to save its JSON in
-`data/sokoban/collections/<collection-id>.json` and immediately load its levels
-into the game. Its description and author are shown when available from
-LetsLogic. Saved collections appear in the **Saved collections** selector on
-later local runs. Use the **Fullscreen** button to expand the game to the
-browser view; the board follows the player as you move or undo. A built-in
-practice board remains available when the API key is missing or LetsLogic
-cannot be reached.
+browser. Choose a collection and click **Import & play** to persist it and
+immediately load its levels into the game. Local runs save JSON files in
+`data/sokoban/collections/`; Vercel deployments save them to Vercel Blob.
+Descriptions and authors are shown when available from LetsLogic. Saved
+collections appear in the **Saved collections** selector and can be reopened
+or deleted. Use the **Fullscreen** button to expand the game to the browser
+view; the board follows the player as you move or undo. A built-in practice
+board remains available when the API key is missing or LetsLogic cannot be
+reached.
 
 Set `SOKOBAN_KEY` in the local `.env` file for development or as an environment
 variable in Vercel. `SOKOBAN_COLLECTION_ID` sets the default collection for the
@@ -24,6 +25,13 @@ legacy `/api/sokoban/levels` endpoint; it defaults to `550`.
 `SOKOBAN_COLLECTIONS_DIR` can override the local saved-collection directory.
 The `/api/sokoban/health` endpoint reports whether the LetsLogic key is
 configured without returning the key.
+
+For Vercel deployments, create a Blob store and connect it to the project.
+The Vercel Blob Python SDK uses the connected store's Vercel credentials; a
+`BLOB_READ_WRITE_TOKEN` can also be configured when needed. The collection
+blobs are public because the game has no user accounts. The delete button asks
+for confirmation, but any visitor to the public site can delete a saved
+collection.
 
 Run the app locally with:
 
@@ -34,12 +42,8 @@ uvicorn app:app --reload
 Open `http://127.0.0.1:8000/sokoban` to play. Vercel detects the FastAPI app
 through the `tool.vercel.entrypoint` setting in `pyproject.toml`; add
 `SOKOBAN_KEY` in the Vercel project's environment variables before deploying.
-Vercel Functions have read-only filesystems except for temporary `/tmp` storage,
-so downloaded collections on Vercel are not durable and may not be available
-after a function instance is recycled. Use a persistent database such as Neon
-if collections must remain saved across Vercel instances. Local development
-stores collection files in the project folder; game progress remains in the
-browser.
+Local development stores collection files in the project folder; game progress
+remains in the browser.
 
 ## Main pieces
 

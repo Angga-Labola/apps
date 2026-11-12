@@ -8,6 +8,12 @@ const DIRECTIONS = {
     left: { x: -1, y: 0 },
     right: { x: 1, y: 0 },
 };
+const PLAYER_SPRITES = {
+    up: "player_02.png",
+    down: "player_01.png",
+    left: "player_14.png",
+    right: "player_11.png",
+};
 const LEVEL_PAGE_SIZE = 50;
 const ASSET_ROOT = "/static/sokoban_assets/PNG/Default%20size";
 
@@ -22,7 +28,6 @@ const gameStatusElement = document.getElementById("game-status");
 const levelsStatusElement = document.getElementById("levels-status");
 const levelTotalElement = document.getElementById("level-total");
 const levelListElement = document.getElementById("level-list");
-const searchElement = document.getElementById("level-search");
 const showMoreButton = document.getElementById("show-more-button");
 const downloadCollectionButton = document.getElementById("download-collection-button");
 const collectionSelect = document.getElementById("collection-select");
@@ -32,6 +37,7 @@ const collectionAuthorElement = document.getElementById("collection-author");
 const savedCollectionSelect = document.getElementById("saved-collection-select");
 const savedCollectionsStatusElement = document.getElementById("saved-collections-status");
 const openSavedCollectionButton = document.getElementById("open-saved-collection-button");
+const deleteSavedCollectionButton = document.getElementById("delete-saved-collection-button");
 const levelListHeading = document.getElementById("level-list-heading");
 const nextButton = document.getElementById("next-button");
 
@@ -116,6 +122,7 @@ function parseMap(mapText) {
         goals: new Set(),
         boxes: new Set(),
         player: null,
+        facing: "down",
         moves: 0,
         pushes: 0,
         history: [],
@@ -157,6 +164,7 @@ function isWall(game, x, y) {
 function saveHistory(game) {
     game.history.push({
         player: { ...game.player },
+        facing: game.facing,
         boxes: [...game.boxes],
         moves: game.moves,
         pushes: game.pushes,
@@ -171,7 +179,11 @@ function movePlayer(direction) {
     const nextX = currentGame.player.x + delta.x;
     const nextY = currentGame.player.y + delta.y;
     const nextPosition = positionKey(nextX, nextY);
-    if (isWall(currentGame, nextX, nextY)) return;
+    if (isWall(currentGame, nextX, nextY)) {
+        currentGame.facing = direction;
+        updatePlayerSprite();
+        return;
+    }
 
     const nextBoxes = new Set(currentGame.boxes);
     let pushed = false;
@@ -179,13 +191,18 @@ function movePlayer(direction) {
         const boxX = nextX + delta.x;
         const boxY = nextY + delta.y;
         const boxDestination = positionKey(boxX, boxY);
-        if (isWall(currentGame, boxX, boxY) || nextBoxes.has(boxDestination)) return;
+        if (isWall(currentGame, boxX, boxY) || nextBoxes.has(boxDestination)) {
+            currentGame.facing = direction;
+            updatePlayerSprite();
+            return;
+        }
         nextBoxes.delete(nextPosition);
         nextBoxes.add(boxDestination);
         pushed = true;
     }
 
     saveHistory(currentGame);
+    currentGame.facing = direction;
     currentGame.boxes = nextBoxes;
     currentGame.player = { x: nextX, y: nextY };
     currentGame.moves += 1;
@@ -198,6 +215,7 @@ function undoMove() {
     if (!currentGame || !currentGame.history.length) return;
     const previous = currentGame.history.pop();
     currentGame.player = previous.player;
+    currentGame.facing = previous.facing;
     currentGame.boxes = new Set(previous.boxes);
     currentGame.moves = previous.moves;
     currentGame.pushes = previous.pushes;
@@ -231,6 +249,13 @@ function updateFullscreenButton() {
     fullscreenButton.setAttribute("aria-pressed", String(isFullscreen));
 }
 
+function updatePlayerSprite() {
+    const playerImage = gameGridElement.querySelector(".is-player img");
+    if (playerImage) {
+        playerImage.src = `${ASSET_ROOT}/Player/${PLAYER_SPRITES[currentGame.facing]}`;
+    }
+}
+
 function renderGame() {
     if (!currentGame) return;
     gameGridElement.replaceChildren();
@@ -258,7 +283,7 @@ function renderGame() {
                 }
             } else if (currentGame.player.x === x && currentGame.player.y === y) {
                 cell.classList.add("is-player");
-                sprite = `${ASSET_ROOT}/Player/player_01.png`;
+                sprite = `${ASSET_ROOT}/Player/${PLAYER_SPRITES[currentGame.facing]}`;
             }
 
             if (sprite) {
@@ -318,15 +343,8 @@ function selectLevel(index) {
     renderGame();
 }
 
-function getFilteredIndexes() {
-    const search = searchElement.value.trim().toLocaleLowerCase();
-    return levels.map((level, index) => ({ level, index }))
-        .filter(({ level, index }) => getLevelName(level, index).toLocaleLowerCase().includes(search))
-        .map(({ index }) => index);
-}
-
 function renderLevelList() {
-    const indexes = getFilteredIndexes();
+    const indexes = levels.map((_, index) => index);
     const shown = indexes.slice(0, visibleLevelCount);
     levelListElement.replaceChildren();
 
@@ -346,7 +364,7 @@ function renderLevelList() {
     }
 
     levelsStatusElement.textContent = levels.length
-        ? `${levelsMessage} Showing ${shown.length} of ${indexes.length} matching levels.`
+        ? `${levelsMessage} Showing ${shown.length} of ${indexes.length} levels.`
         : levelsMessage;
     showMoreButton.hidden = shown.length >= indexes.length;
 }
@@ -392,6 +410,7 @@ function populateSavedCollectionSelect() {
     }
     savedCollectionSelect.disabled = savedCollections.length === 0;
     openSavedCollectionButton.disabled = savedCollections.length === 0;
+    deleteSavedCollectionButton.disabled = savedCollections.length === 0;
 }
 
 function activateCollection(collection, sourceMessage) {
@@ -400,7 +419,6 @@ function activateCollection(collection, sourceMessage) {
     collectionName = String(collection.name ?? `Collection ${collectionId}`);
     selectedLevelIndex = -1;
     visibleLevelCount = LEVEL_PAGE_SIZE;
-    searchElement.value = "";
     levelNameElement.textContent = collectionName;
     levelListHeading.textContent = collectionName;
     levelTotalElement.textContent = `${levels.length} levels`;
@@ -456,11 +474,14 @@ async function loadSavedCollections() {
         const result = await response.json();
         savedCollections = result.collections;
         populateSavedCollectionSelect();
-        savedCollectionsStatusElement.textContent = result.storage === "temporary"
-            ? `${savedCollections.length} saved in temporary Vercel storage.`
+        savedCollectionsStatusElement.textContent = result.storage === "vercel_blob"
+            ? `${savedCollections.length} saved in Vercel Blob.`
             : `${savedCollections.length} saved in data/sokoban/collections/.`;
     } catch (error) {
         savedCollectionsStatusElement.textContent = error.message;
+        savedCollectionSelect.disabled = true;
+        openSavedCollectionButton.disabled = true;
+        deleteSavedCollectionButton.disabled = true;
     }
 }
 
@@ -494,8 +515,8 @@ async function downloadSelectedCollection() {
         if (!Array.isArray(collection.levels)) {
             throw new Error("LetsLogic returned an unexpected level collection.");
         }
-        const storageMessage = collection.storage === "temporary"
-            ? `Saved temporarily on Vercel as ${collection.saved_file};`
+        const storageMessage = collection.storage === "vercel_blob"
+            ? `Saved to Vercel Blob as ${collection.saved_file};`
             : `Saved to data/sokoban/collections/${collection.saved_file};`;
         collectionsStatusElement.textContent = `${storageMessage} opening ${selected.name}.`;
         activateCollection(
@@ -534,10 +555,45 @@ async function openSavedCollection() {
     }
 }
 
-searchElement.addEventListener("input", () => {
-    visibleLevelCount = LEVEL_PAGE_SIZE;
-    renderLevelList();
-});
+async function deleteSavedCollection() {
+    const id = savedCollectionSelect.value;
+    if (!id) return;
+    const collection = savedCollections.find(
+        (entry) => entry.collection_id === id,
+    );
+    const name = collection?.name ?? `Collection ${id}`;
+    if (!window.confirm(`Delete "${name}"? This cannot be undone.`)) return;
+
+    deleteSavedCollectionButton.disabled = true;
+    try {
+        const response = await fetch(
+            `/api/sokoban/saved-collections/${encodeURIComponent(id)}`,
+            { method: "DELETE" },
+        );
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || "Could not delete this collection.");
+        }
+
+        savedCollectionsStatusElement.textContent = `${name} was deleted.`;
+        if (collectionId === id) {
+            activateCollection(
+                {
+                    collection_id: "",
+                    name: PRACTICE_LEVEL.name,
+                    levels: [PRACTICE_LEVEL],
+                },
+                "Built-in practice level.",
+            );
+        }
+        await loadSavedCollections();
+    } catch (error) {
+        savedCollectionsStatusElement.textContent = error.message;
+    } finally {
+        deleteSavedCollectionButton.disabled = savedCollections.length === 0;
+    }
+}
+
 showMoreButton.addEventListener("click", () => {
     visibleLevelCount += LEVEL_PAGE_SIZE;
     renderLevelList();
@@ -555,6 +611,7 @@ collectionSelect.addEventListener("change", () => {
 });
 downloadCollectionButton.addEventListener("click", downloadSelectedCollection);
 openSavedCollectionButton.addEventListener("click", openSavedCollection);
+deleteSavedCollectionButton.addEventListener("click", deleteSavedCollection);
 fullscreenButton.addEventListener("click", async () => {
     try {
         if (document.fullscreenElement === gamePanelElement) {
