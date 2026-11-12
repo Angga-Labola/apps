@@ -138,6 +138,44 @@ class SokobanApiTests(unittest.TestCase):
         self.assertEqual(put_blob.call_args.kwargs["access"], "public")
         self.assertTrue(put_blob.call_args.kwargs["allow_overwrite"])
 
+    def test_vercel_download_uses_configured_private_blob_access(self):
+        uploaded = Mock(pathname="sokoban-collections/44.json")
+        with (
+            patch.dict(
+                os.environ,
+                {"VERCEL": "1", "SOKOBAN_BLOB_ACCESS": "private"},
+            ),
+            patch("app.fetch_sokoban_levels", return_value=[{"id": 1, "map": "@$."}]),
+            patch("app.vercel_blob.put_blob", return_value=uploaded) as put_blob,
+        ):
+            app.save_sokoban_collection(
+                "44",
+                app.CollectionDownloadRequest(name="Test collection"),
+            )
+
+        self.assertEqual(put_blob.call_args.kwargs["access"], "private")
+
+    def test_vercel_download_reports_blob_error_details(self):
+        error = app.BlobError(
+            "The store is suspended.",
+            status_code=400,
+            code="store_suspended",
+        )
+        with (
+            patch.dict(os.environ, {"VERCEL": "1"}),
+            patch("app.fetch_sokoban_levels", return_value=[{"id": 1, "map": "@$."}]),
+            patch("app.vercel_blob.put_blob", side_effect=error),
+        ):
+            with self.assertRaises(HTTPException) as raised:
+                app.save_sokoban_collection(
+                    "44",
+                    app.CollectionDownloadRequest(name="Test collection"),
+                )
+
+        self.assertEqual(raised.exception.status_code, 502)
+        self.assertIn("400, store_suspended", raised.exception.detail)
+        self.assertIn("The store is suspended.", raised.exception.detail)
+
     def test_vercel_saved_collections_are_listed_from_blob(self):
         saved = {
             "collection_id": "44",

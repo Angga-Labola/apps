@@ -28,10 +28,10 @@ configured without returning the key.
 
 For Vercel deployments, create a Blob store and connect it to the project.
 The Vercel Blob Python SDK uses the connected store's Vercel credentials; a
-`BLOB_READ_WRITE_TOKEN` can also be configured when needed. The collection
-blobs are public because the game has no user accounts. The delete button asks
-for confirmation, but any visitor to the public site can delete a saved
-collection.
+`BLOB_READ_WRITE_TOKEN` can also be configured when needed. Set
+`SOKOBAN_BLOB_ACCESS` to match the store's access mode (`public` or `private`);
+it defaults to `public`. The delete button asks for confirmation, but any
+visitor to the public site can delete a saved collection.
 
 Run the app locally with:
 

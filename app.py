@@ -3,6 +3,7 @@ import os
 import re
 import tempfile
 from pathlib import Path
+from typing import Literal
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
@@ -156,11 +157,27 @@ def vercel_collection_path(collection_id: str) -> str:
     return f"{VERCEL_BLOB_COLLECTIONS_PREFIX}{collection_id}.json"
 
 
+def vercel_blob_access() -> Literal["public", "private"]:
+    access = os.getenv("SOKOBAN_BLOB_ACCESS", "public").strip().lower()
+    if access not in {"public", "private"}:
+        raise HTTPException(
+            status_code=500,
+            detail="SOKOBAN_BLOB_ACCESS must be either 'public' or 'private'.",
+        )
+    return access
+
+
+def vercel_blob_error_detail(action: str, error: BlobError) -> str:
+    status = error.status_code if error.status_code is not None else "unknown status"
+    code = error.code or "unknown error"
+    return f"Vercel Blob {action} failed ({status}, {code}): {error}"
+
+
 def read_vercel_collection(collection_id: str) -> dict[str, object]:
     try:
         result = vercel_blob.get_blob(
             vercel_collection_path(collection_id),
-            access="public",
+            access=vercel_blob_access(),
         )
     except BlobNotFoundError as error:
         raise HTTPException(status_code=404, detail="Saved collection not found.") from error
@@ -172,7 +189,7 @@ def read_vercel_collection(collection_id: str) -> dict[str, object]:
     except BlobError as error:
         raise HTTPException(
             status_code=502,
-            detail="The saved collection could not be read from Vercel Blob.",
+            detail=vercel_blob_error_detail("read", error),
         ) from error
 
     try:
@@ -244,7 +261,7 @@ def save_sokoban_collection(
             result = vercel_blob.put_blob(
                 pathname,
                 json.dumps(collection, ensure_ascii=False, indent=2).encode("utf-8"),
-                access="public",
+                access=vercel_blob_access(),
                 content_type="application/json",
                 allow_overwrite=True,
             )
@@ -256,7 +273,7 @@ def save_sokoban_collection(
         except BlobError as error:
             raise HTTPException(
                 status_code=502,
-                detail="The downloaded collection could not be saved to Vercel Blob.",
+                detail=vercel_blob_error_detail("upload", error),
             ) from error
         return {
             **collection,
@@ -324,7 +341,7 @@ def list_saved_sokoban_collections():
         except BlobError as error:
             raise HTTPException(
                 status_code=502,
-                detail="Saved Sokoban collections could not be listed from Vercel Blob.",
+                detail=vercel_blob_error_detail("list", error),
             ) from error
         return {"collections": collections, "storage": "vercel_blob"}
 
