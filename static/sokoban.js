@@ -26,6 +26,13 @@ const moveCountElement = document.getElementById("move-count");
 const pushCountElement = document.getElementById("push-count");
 const gameStatusElement = document.getElementById("game-status");
 const levelsStatusElement = document.getElementById("levels-status");
+const solverResultElement = document.getElementById("solver-result");
+const checkLevelButton = document.getElementById("check-level-button");
+const showSolutionButton = document.getElementById("show-solution-button");
+const solutionPlaybackControls = document.getElementById("solution-playback-controls");
+const previousSolutionMoveButton = document.getElementById("solution-previous-move-button");
+const nextSolutionMoveButton = document.getElementById("solution-next-move-button");
+const solutionMoveCounter = document.getElementById("solution-move-counter");
 const levelTotalElement = document.getElementById("level-total");
 const levelListElement = document.getElementById("level-list");
 const showMoreButton = document.getElementById("show-more-button");
@@ -43,12 +50,18 @@ const previousButton = document.getElementById("previous-button");
 const nextButton = document.getElementById("next-button");
 
 let levels = [];
+let levelSolvability = [];
+let levelSolutions = [];
+let solutionPlaybackMoves = null;
+let solutionPlaybackIndex = 0;
+let solverRequestId = 0;
+let solverRequestInProgress = false;
 let collections = [];
 let savedCollections = [];
 let selectedLevelIndex = -1;
 let visibleLevelCount = LEVEL_PAGE_SIZE;
 let currentGame;
-let collectionId = "550";
+let collectionId = "";
 let collectionName = "Practice level";
 let levelsMessage = "Choose or download a collection to list its levels.";
 
@@ -65,6 +78,66 @@ function getLevelName(level, index) {
         return `${id}. ${name}`;
     }
     return String(name ?? id ?? `Level ${index + 1}`);
+}
+
+function updateSolverButtons() {
+    const available = /^\d{1,12}$/.test(collectionId) && selectedLevelIndex >= 0;
+    checkLevelButton.disabled = !available || solverRequestInProgress;
+    showSolutionButton.disabled = !available || solverRequestInProgress;
+}
+
+function updateSolutionPlaybackControls() {
+    const total = solutionPlaybackMoves ? solutionPlaybackMoves.length : 0;
+    solutionMoveCounter.textContent = `Move ${solutionPlaybackIndex} of ${total}`;
+    previousSolutionMoveButton.disabled = solutionPlaybackIndex <= 0;
+    nextSolutionMoveButton.disabled = solutionPlaybackIndex >= total;
+}
+
+function clearSolutionPlayback() {
+    solutionPlaybackMoves = null;
+    solutionPlaybackIndex = 0;
+    solutionPlaybackControls.hidden = true;
+    updateSolutionPlaybackControls();
+}
+
+function startSolutionPlayback(solution, levelIndex) {
+    selectLevel(levelIndex);
+    if (!solution.length) {
+        solverResultElement.textContent = "This level is already solved; no moves are needed.";
+        return;
+    }
+
+    solutionPlaybackMoves = Array.from(solution);
+    solutionPlaybackIndex = 0;
+    solutionPlaybackControls.hidden = false;
+    solverResultElement.textContent = "Use the arrows to step through the solution.";
+    updateSolutionPlaybackControls();
+}
+
+function playNextSolutionMove() {
+    if (!solutionPlaybackMoves || solutionPlaybackIndex >= solutionPlaybackMoves.length) return;
+    const directions = { u: "up", d: "down", l: "left", r: "right" };
+    const direction = directions[solutionPlaybackMoves[solutionPlaybackIndex].toLowerCase()];
+    const movesBefore = currentGame?.moves;
+    if (!direction || movesBefore === undefined) return;
+
+    movePlayer(direction, true);
+    if (currentGame && currentGame.moves === movesBefore + 1) {
+        solutionPlaybackIndex += 1;
+        solverResultElement.textContent = "Use the arrows to step through the solution.";
+        updateSolutionPlaybackControls();
+    }
+}
+
+function playPreviousSolutionMove() {
+    if (!solutionPlaybackMoves || solutionPlaybackIndex <= 0 || !currentGame) return;
+    const movesBefore = currentGame.moves;
+    undoMove(true);
+    if (currentGame.moves === movesBefore - 1) {
+        solutionPlaybackIndex -= 1;
+        solverResultElement.textContent = "Use the arrows to step through the solution.";
+        updateSolutionPlaybackControls();
+    }
 }
 
 function getLevelMap(level) {
@@ -173,7 +246,8 @@ function saveHistory(game) {
     });
 }
 
-function movePlayer(direction) {
+function movePlayer(direction, fromSolution = false) {
+    if (!fromSolution) clearSolutionPlayback();
     const delta = DIRECTIONS[direction];
     if (!currentGame || currentGame.won) return;
 
@@ -212,7 +286,8 @@ function movePlayer(direction) {
     renderGame();
 }
 
-function undoMove() {
+function undoMove(fromSolution = false) {
+    if (!fromSolution) clearSolutionPlayback();
     if (!currentGame || !currentGame.history.length) return;
     const previous = currentGame.history.pop();
     currentGame.player = previous.player;
@@ -302,7 +377,7 @@ function renderGame() {
     gameStatusElement.classList.toggle("is-won", currentGame.won);
     gameStatusElement.textContent = currentGame.won
         ? `Level complete in ${currentGame.moves} moves and ${currentGame.pushes} pushes!`
-        : "Use the arrow keys or WASD to move.";
+        : "";
     previousButton.disabled = selectedLevelIndex <= 0;
     nextButton.disabled = selectedLevelIndex < 0
         || selectedLevelIndex >= levels.length - 1;
@@ -313,6 +388,11 @@ function selectLevel(index) {
     if (index < 0 || index >= levels.length) return;
     const level = levels[index];
     selectedLevelIndex = index;
+    solverRequestId += 1;
+    solverRequestInProgress = false;
+    solverResultElement.textContent = "";
+    clearSolutionPlayback();
+    updateSolverButtons();
     levelNameElement.textContent = getLevelName(level, index);
     previousButton.disabled = index <= 0;
     nextButton.disabled = index >= levels.length - 1;
@@ -359,6 +439,10 @@ function renderLevelList() {
         button.type = "button";
         button.setAttribute("aria-current", index === selectedLevelIndex ? "true" : "false");
         button.addEventListener("click", () => selectLevel(index));
+        if (levelSolvability[index] === "unsolvable") {
+            button.classList.add("is-unsolvable");
+            button.title = "The solver confirmed that this level has no solution.";
+        }
         const name = document.createElement("span");
         name.textContent = getLevelName(levels[index], index);
         const number = document.createElement("small");
@@ -421,6 +505,10 @@ function populateSavedCollectionSelect() {
 function activateCollection(collection, sourceMessage) {
     levels = collection.levels;
     collectionId = String(collection.collection_id ?? "");
+    solverRequestId += 1;
+    solverRequestInProgress = false;
+    levelSolvability = levels.map(() => null);
+    levelSolutions = levels.map(() => null);
     collectionName = String(collection.name ?? `Collection ${collectionId}`);
     selectedLevelIndex = -1;
     visibleLevelCount = LEVEL_PAGE_SIZE;
@@ -429,6 +517,9 @@ function activateCollection(collection, sourceMessage) {
     levelTotalElement.textContent = `${levels.length} levels`;
     levelsMessage = sourceMessage;
     renderCollectionDescription(collection);
+    solverResultElement.textContent = "";
+    clearSolutionPlayback();
+    updateSolverButtons();
     gameGridElement.replaceChildren();
     moveCountElement.textContent = "0";
     pushCountElement.textContent = "0";
@@ -442,6 +533,76 @@ function activateCollection(collection, sourceMessage) {
     } else {
         gameStatusElement.textContent = "This collection has no playable levels.";
         gameStatusElement.classList.remove("is-won");
+    }
+}
+
+async function solveCurrentLevel(showSolution = false) {
+    const index = selectedLevelIndex;
+    const id = collectionId;
+    if (index < 0 || !/^\d{1,12}$/.test(id)) return;
+
+    if (showSolution && levelSolutions[index] !== null) {
+        startSolutionPlayback(levelSolutions[index], index);
+        return;
+    }
+    if (!showSolution && ["solvable", "unsolvable"].includes(levelSolvability[index])) {
+        solverResultElement.textContent = levelSolvability[index] === "solvable"
+            ? "This level is solvable."
+            : "No solution exists for this level.";
+        return;
+    }
+
+    const requestId = ++solverRequestId;
+    solverRequestInProgress = true;
+    updateSolverButtons();
+    solverResultElement.textContent = showSolution
+        ? "Searching for a solution…"
+        : "Checking this level…";
+
+    try {
+        const response = await fetch(
+            `/api/sokoban/saved-collections/${encodeURIComponent(id)}`
+            + `/levels/${index}/solve?show_solution=${showSolution}`,
+        );
+        if (!response.ok) {
+            const error = await response.json().catch(() => ({}));
+            throw new Error(error.detail || "Could not check this level.");
+        }
+        const result = await response.json();
+        if (!["solvable", "unsolvable", "unknown"].includes(result.status)
+            || (showSolution && result.status === "solvable"
+                && typeof result.solution !== "string")) {
+            throw new Error("The solver returned an unexpected result.");
+        }
+        if (requestId !== solverRequestId || index !== selectedLevelIndex || id !== collectionId) {
+            return;
+        }
+
+        if (result.status !== "unknown" || levelSolvability[index] === null) {
+            levelSolvability[index] = result.status;
+        }
+        if (showSolution && result.status === "solvable") {
+            levelSolutions[index] = result.solution;
+            startSolutionPlayback(result.solution, index);
+        } else if (result.status === "solvable") {
+            solverResultElement.textContent = "This level is solvable.";
+        } else if (result.status === "unsolvable") {
+            solverResultElement.textContent = "No solution exists for this level.";
+        } else {
+            solverResultElement.textContent = levelSolvability[index] === "solvable"
+                ? "LetsLogic indicates this level is solvable, but the solver could not find a move sequence within its limit."
+                : "Could not verify this level within the solver's search limit.";
+        }
+        renderLevelList();
+    } catch (error) {
+        if (requestId !== solverRequestId) return;
+        if (levelSolvability[index] === null) levelSolvability[index] = "unknown";
+        solverResultElement.textContent = error.message;
+    } finally {
+        if (requestId === solverRequestId) {
+            solverRequestInProgress = false;
+            updateSolverButtons();
+        }
     }
 }
 
@@ -608,6 +769,8 @@ document.getElementById("previous-button").addEventListener("click", () => {
     if (selectedLevelIndex > 0) selectLevel(selectedLevelIndex - 1);
 });
 document.getElementById("undo-button").addEventListener("click", undoMove);
+previousSolutionMoveButton.addEventListener("click", playPreviousSolutionMove);
+nextSolutionMoveButton.addEventListener("click", playNextSolutionMove);
 document.getElementById("restart-button").addEventListener("click", () => {
     if (selectedLevelIndex >= 0) selectLevel(selectedLevelIndex);
 });
@@ -620,6 +783,8 @@ collectionSelect.addEventListener("change", () => {
 });
 downloadCollectionButton.addEventListener("click", downloadSelectedCollection);
 openSavedCollectionButton.addEventListener("click", openSavedCollection);
+checkLevelButton.addEventListener("click", () => solveCurrentLevel());
+showSolutionButton.addEventListener("click", () => solveCurrentLevel(true));
 deleteSavedCollectionButton.addEventListener("click", deleteSavedCollection);
 fullscreenButton.addEventListener("click", async () => {
     try {

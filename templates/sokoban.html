@@ -36,9 +36,24 @@
                     </button>
                 </div>
 
-                <p id="game-status" class="game-status" role="status" aria-live="polite">
-                    Use the arrow keys or WASD to move.
-                </p>
+                <div class="solver-controls" role="group" aria-label="Current level solver">
+                    <button id="check-level-button" class="game-button secondary" type="button" disabled>
+                        Check
+                    </button>
+                    <button id="show-solution-button" class="game-button" type="button" disabled>
+                        Show solution
+                    </button>
+                </div>
+                <p id="game-status" class="game-status" role="status" aria-live="polite"></p>
+                <p id="solver-result" class="game-status" role="status" aria-live="polite"></p>
+                <div id="solution-playback-controls" class="solution-playback-controls"
+                    role="group" aria-label="Solution playback" hidden>
+                    <button id="solution-previous-move-button" class="game-button secondary"
+                        type="button" aria-label="Previous solution move" disabled>←</button>
+                    <output id="solution-move-counter" aria-live="polite">Move 0 of 0</output>
+                    <button id="solution-next-move-button" class="game-button"
+                        type="button" aria-label="Next solution move" disabled>→</button>
+                </div>
                 <div id="game-board" class="game-board" role="img" aria-label="Sokoban game board">
                     <div id="game-grid" class="game-grid"></div>
                 </div>

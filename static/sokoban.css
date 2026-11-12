@@ -139,6 +139,32 @@
   font-weight: 700;
 }
 
+.solver-controls {
+  display: flex;
+  gap: 8px;
+  margin: 16px 0 8px;
+}
+
+.solution-playback-controls {
+  align-items: center;
+  border-radius: 9px;
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin: 8px 0 12px;
+}
+
+.solution-playback-controls[hidden] {
+  display: none;
+}
+
+.solution-playback-controls output {
+  color: var(--soko-muted);
+  font-size: .82rem;
+  min-width: 90px;
+  text-align: center;
+}
+
 .game-board {
   --tile-size: min(8vw, 48px);
   align-items: center;
@@ -399,6 +425,14 @@
 .level-list button:hover,
 .level-list button[aria-current="true"] {
   background: var(--soko-accent-dark);
+}
+
+.level-list button.is-unsolvable {
+  color: #ff7777;
+}
+
+.level-list button.is-unsolvable small {
+  color: #ff9999;
 }
 
 .level-list small {

@@ -13,6 +13,8 @@ import requests
 from vercel.blob import BlobCredentialsError, BlobError, BlobNotFoundError
 from vercel.blob import sync as vercel_blob
 
+from sokoban_solver import find_sokoban_solution, solve_sokoban_level
+
 
 BASE_DIR = Path(__file__).resolve().parent
 load_dotenv(BASE_DIR / ".env")
@@ -390,6 +392,29 @@ def get_saved_sokoban_collection(collection_id: str):
     if not isinstance(collection, dict) or not isinstance(collection.get("levels"), list):
         raise HTTPException(status_code=500, detail="The saved collection file is invalid.")
     return collection
+
+
+@router.get(
+    "/api/sokoban/saved-collections/{collection_id}/levels/{level_index}/solve"
+)
+def solve_saved_sokoban_level(
+    collection_id: str,
+    level_index: int,
+    show_solution: bool = False,
+):
+    collection = get_saved_sokoban_collection(collection_id)
+    if level_index < 0 or level_index >= len(collection["levels"]):
+        raise HTTPException(status_code=404, detail="Saved level not found.")
+
+    level = collection["levels"][level_index]
+    if show_solution:
+        status, solution = find_sokoban_solution(level)
+    else:
+        status, solution = solve_sokoban_level(level), None
+    return {
+        "status": status,
+        "solution": solution,
+    }
 
 
 @router.delete("/api/sokoban/saved-collections/{collection_id}")

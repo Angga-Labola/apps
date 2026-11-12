@@ -14,10 +14,14 @@ immediately load its levels into the game. Local runs save JSON files in
 `data/sokoban/collections/`; Vercel deployments save them to Vercel Blob.
 Descriptions and authors are shown when available from LetsLogic. Saved
 collections appear in the **Saved collections** selector and can be reopened
-or deleted. Use the **Fullscreen** button to expand the game to the browser
-view; the board follows the player as you move or undo. A built-in practice
-board remains available when the API key is missing or LetsLogic cannot be
-reached.
+or deleted. Open a saved collection, select a level, then use **Check** or
+**Show solution** in the game panel. Checks run only for the selected level;
+levels proven unsolvable are highlighted in red. **Show solution** resets the
+level and reveals left/right controls to step backward or forward through the
+solution one move at a time. Use the **Fullscreen** button to expand the game
+to the browser view; the board follows the player as you move or undo. A
+built-in practice board remains available when the API key is missing or
+LetsLogic cannot be reached.
 
 Set `SOKOBAN_KEY` in the local `.env` file for development or as an environment
 variable in Vercel. `SOKOBAN_COLLECTION_ID` sets the default collection for the
