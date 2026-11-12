@@ -1,3 +1,4 @@
+/* Game-specific layout and controls; shared site styles are in styles.css. */
 .sokoban-app {
   --soko-bg: #111714;
   --soko-panel: #19221d;

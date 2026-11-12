@@ -1,3 +1,10 @@
+"""Sokoban pages, LetsLogic integration, saved-collection storage, and solver API.
+
+Collections are persisted locally during development or in Vercel Blob on
+Vercel. The upstream LetsLogic key remains on the server and is never returned
+to the browser.
+"""
+
 import json
 import os
 import re
@@ -255,6 +262,8 @@ def save_sokoban_collection(
         "author": payload.author.strip() if payload and payload.author else "",
         "levels": levels,
     }
+    # Replace each collection as a single JSON object in either storage
+    # backend, so the browser can reopen it without contacting LetsLogic.
     if uses_vercel_blob():
         pathname = vercel_collection_path(collection_id)
         try:
@@ -409,6 +418,8 @@ def solve_saved_sokoban_level(
         raise HTTPException(status_code=404, detail="Saved level not found.")
 
     level = collection["levels"][level_index]
+    # Checking solvability can use LetsLogic's move-count metadata; returning
+    # a playback sequence requires the local search to produce actual moves.
     if show_solution:
         status, solution = find_sokoban_solution(level)
     else:

@@ -1,3 +1,5 @@
+// Collection state and solver results are kept in page memory. Loading a new
+// collection resets both caches; a page reload starts with empty caches.
 const PRACTICE_LEVEL = {
     name: "Practice level",
     map: "#######\n#     #\n#  .  #\n#  $  #\n#  @  #\n#######",
@@ -475,6 +477,7 @@ function activateCollection(collection, sourceMessage) {
     collectionId = String(collection.collection_id ?? "");
     solverRequestId += 1;
     solverRequestInProgress = false;
+    // Keep result caches aligned with the selected collection's level indexes.
     levelSolvability = levels.map(() => null);
     levelSolutions = levels.map(() => null);
     collectionName = String(collection.name ?? `Collection ${collectionId}`);
@@ -508,6 +511,7 @@ async function solveCurrentLevel(showSolution = false) {
     const id = collectionId;
     if (index < 0 || !/^\d{1,12}$/.test(id)) return;
 
+    // Reuse a found sequence for this page session instead of repeating search.
     if (showSolution && levelSolutions[index] !== null) {
         startSolutionPlayback(levelSolutions[index], index);
         return;
@@ -519,6 +523,8 @@ async function solveCurrentLevel(showSolution = false) {
         return;
     }
 
+    // A request token prevents a slow result for a previous selection from
+    // overwriting the status or cache for the currently selected level.
     const requestId = ++solverRequestId;
     solverRequestInProgress = true;
     updateSolverButtons();
@@ -549,6 +555,8 @@ async function solveCurrentLevel(showSolution = false) {
             levelSolvability[index] = result.status;
         }
         if (showSolution && result.status === "solvable") {
+            // Only a concrete solution string can be replayed; unknown results
+            // are deliberately not cached as permanent solver outcomes.
             levelSolutions[index] = result.solution;
             startSolutionPlayback(result.solution, index);
         } else if (result.status === "solvable") {

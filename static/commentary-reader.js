@@ -1,3 +1,5 @@
+// Commentary is fetched as structured text and rendered with textContent so
+// upstream commentary markup is never interpreted as browser HTML.
 const commentaryHeading = document.getElementById("commentary-heading");
 const commentaryStatus = document.getElementById("commentary-status");
 const commentaryContent = document.getElementById("commentary-content");

@@ -1,3 +1,10 @@
+"""Routes for the local-chapter Bible reader and remote chapter commentaries.
+
+Bible chapter HTML stays in the repository; commentary text is fetched from
+the configured public API through the backend so the browser uses one route
+and only the supported commentary IDs are requested.
+"""
+
 from pathlib import Path
 
 from fastapi import APIRouter, HTTPException
@@ -43,6 +50,7 @@ def bible_home():
 
 @bible_router.get("/api/bible/books")
 def bible_books():
+    """Build the reader's catalog from available local chapter files."""
     bible_dir = Path("templates/bible")
     books = []
     for book_id, name in BOOK_NAMES.items():
@@ -58,6 +66,8 @@ def bible_books():
 
 @bible_router.get("/{book_id}/{chapter_id}")
 def read_page(book_id:str,chapter_id:str):
+    # This route serves the shared reader shell; the matching API route below
+    # serves the chapter HTML that the browser inserts into that shell.
     if book_id not in BOOK_NAMES or not chapter_id.isdigit():
         raise HTTPException(status_code=404, detail="Bible chapter not found")
     chapter_path = Path("templates/bible") / book_id / f"{book_id}_{chapter_id}.html"
@@ -78,6 +88,7 @@ def bible_chapter(book_id:str,chapter_id:str):
 
 @bible_router.get("/api/bible/commentary/{commentary_id}/{book_id}/{chapter_id}")
 def bible_commentary(commentary_id:str,book_id:str,chapter_id:str):
+    """Return one allow-listed commentary chapter with source attribution."""
     if commentary_id not in COMMENTARIES:
         raise HTTPException(status_code=404, detail="Commentary not found")
     if book_id not in BOOK_NAMES or not chapter_id.isdigit():

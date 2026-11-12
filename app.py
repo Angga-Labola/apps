@@ -14,6 +14,8 @@ BASE_DIR = Path(__file__).resolve().parent
 
 app = FastAPI()
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+# Feature routers keep the Bible reader and Sokoban APIs separate from the
+# general application routes while sharing this FastAPI app and static mount.
 app.include_router(sokoban_router)
 app.include_router(bible_router)
 

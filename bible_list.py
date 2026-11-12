@@ -1,3 +1,10 @@
+"""One-off helper to print Bible IDs available from the configured API.
+
+This script is not part of the web app's request flow. It reads BIBLE_API_URL
+and BIBLE_API_KEY from the environment (or a local .env file) and prints the
+API's name-to-ID catalog.
+"""
+
 import os
 import json
 import requests
@@ -8,6 +15,7 @@ headers = {'api-key': BIBLE_API_KEY}
 BIBLE_API_URL=os.getenv("BIBLE_API_URL")
 
 def bible_list():
+    """Fetch the upstream Bible catalog and return its data entries."""
     response=requests.get(
         f"{BIBLE_API_URL}/bibles",
         headers=headers,

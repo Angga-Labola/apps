@@ -1,3 +1,9 @@
+"""Bounded Sokoban search used to check levels and produce move sequences.
+
+The search operates on box pushes rather than every player step. Lowercase
+letters in a returned path are player walks; uppercase letters are pushes.
+"""
+
 from collections import deque
 import re
 import time
@@ -8,6 +14,7 @@ SolveStatus = Literal["solvable", "unsolvable", "unknown"]
 _DIRECTIONS = ((0, -1), (0, 1), (-1, 0), (1, 0))
 _OPPOSITE = (1, 0, 3, 2)
 _MOVE_CHARS = "UDLR"
+# Return "unknown" rather than claiming a result when either safety budget is hit.
 _MAX_SEARCH_STATES = 25_000
 _MAX_SEARCH_SECONDS = 3.0
 
@@ -100,6 +107,8 @@ def _neighbors(width: int, height: int, floor: set[int]) -> list[tuple[int, ...]
 
 
 def _reachable(start: int, boxes: set[int], neighbors: list[tuple[int, ...]]):
+    # Any player position in this connected region is equivalent until a box
+    # is pushed, so the smallest reachable tile is a stable state key.
     seen = 1 << start
     pending = [start]
     while pending:
@@ -210,6 +219,8 @@ def _search_sokoban_level(level: object, include_solution: bool) -> tuple[SolveS
 
     initial_boxes = tuple(sorted(boxes))
     initial_reachable, initial_anchor = _reachable(player, boxes, neighbors)
+    # Deduplicate box layouts plus the player's reachable region, not each
+    # individual player step; this keeps the push search much smaller.
     initial_state = (initial_boxes, initial_anchor)
     pending_states = deque([(initial_boxes, player, initial_reachable, initial_anchor)])
     visited = {initial_state}
@@ -291,6 +302,7 @@ def _search_sokoban_level(level: object, include_solution: bool) -> tuple[SolveS
 
 
 def solve_sokoban_level(level: object) -> SolveStatus:
+    """Check a level, trusting positive LetsLogic move counts when available."""
     if isinstance(level, dict):
         for key in ("blue_moves", "green_moves"):
             moves = level.get(key)
@@ -300,4 +312,5 @@ def solve_sokoban_level(level: object) -> SolveStatus:
 
 
 def find_sokoban_solution(level: object) -> tuple[SolveStatus, str | None]:
+    """Search locally for a walk-and-push sequence for browser playback."""
     return _search_sokoban_level(level, include_solution=True)

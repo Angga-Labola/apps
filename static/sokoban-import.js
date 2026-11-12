@@ -1,3 +1,5 @@
+// The importer talks only to this app's backend; LetsLogic credentials and
+// collection persistence are handled server-side.
 const collectionSelect = document.getElementById("collection-select");
 const downloadCollectionButton = document.getElementById("download-collection-button");
 const collectionsStatusElement = document.getElementById("collections-status");

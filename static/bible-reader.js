@@ -1,3 +1,5 @@
+// The URL is the source of truth for the selected passage; chapter changes
+// navigate to a page URL while the chapter API only supplies its HTML content.
 const bookSelect = document.getElementById("book-select");
 const chapterSelect = document.getElementById("chapter-select");
 const commentarySelect = document.getElementById("commentary-select");
@@ -54,6 +56,7 @@ function updateCommentaryLink() {
 }
 
 async function loadChapter(book, chapter, verse = null) {
+    // Ignore stale responses if navigation starts another chapter request first.
     const thisRequest = ++requestNumber;
     currentBook = book;
     currentChapter = chapter;
