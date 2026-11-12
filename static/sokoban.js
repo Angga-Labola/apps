@@ -39,6 +39,7 @@ const savedCollectionsStatusElement = document.getElementById("saved-collections
 const openSavedCollectionButton = document.getElementById("open-saved-collection-button");
 const deleteSavedCollectionButton = document.getElementById("delete-saved-collection-button");
 const levelListHeading = document.getElementById("level-list-heading");
+const previousButton = document.getElementById("previous-button");
 const nextButton = document.getElementById("next-button");
 
 let levels = [];
@@ -302,6 +303,7 @@ function renderGame() {
     gameStatusElement.textContent = currentGame.won
         ? `Level complete in ${currentGame.moves} moves and ${currentGame.pushes} pushes!`
         : "Use the arrow keys or WASD to move.";
+    previousButton.disabled = selectedLevelIndex <= 0;
     nextButton.disabled = selectedLevelIndex < 0
         || selectedLevelIndex >= levels.length - 1;
     requestAnimationFrame(() => centerPlayer());
@@ -312,6 +314,7 @@ function selectLevel(index) {
     const level = levels[index];
     selectedLevelIndex = index;
     levelNameElement.textContent = getLevelName(level, index);
+    previousButton.disabled = index <= 0;
     nextButton.disabled = index >= levels.length - 1;
     renderLevelList();
 
@@ -323,6 +326,7 @@ function selectLevel(index) {
         pushCountElement.textContent = "0";
         gameStatusElement.textContent = "This level has no supported text map. You can still download its LetsLogic data.";
         gameStatusElement.classList.remove("is-won");
+        previousButton.disabled = index <= 0;
         nextButton.disabled = index >= levels.length - 1;
         return;
     }
@@ -336,6 +340,7 @@ function selectLevel(index) {
         pushCountElement.textContent = "0";
         gameStatusElement.textContent = error.message;
         gameStatusElement.classList.remove("is-won");
+        previousButton.disabled = index <= 0;
         nextButton.disabled = index >= levels.length - 1;
         return;
     }
@@ -428,6 +433,7 @@ function activateCollection(collection, sourceMessage) {
     moveCountElement.textContent = "0";
     pushCountElement.textContent = "0";
     currentGame = null;
+    previousButton.disabled = levels.length < 2 || selectedLevelIndex <= 0;
     nextButton.disabled = levels.length < 2;
     renderLevelList();
 
@@ -597,6 +603,9 @@ async function deleteSavedCollection() {
 showMoreButton.addEventListener("click", () => {
     visibleLevelCount += LEVEL_PAGE_SIZE;
     renderLevelList();
+});
+document.getElementById("previous-button").addEventListener("click", () => {
+    if (selectedLevelIndex > 0) selectLevel(selectedLevelIndex - 1);
 });
 document.getElementById("undo-button").addEventListener("click", undoMove);
 document.getElementById("restart-button").addEventListener("click", () => {
