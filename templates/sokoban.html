@@ -7,15 +7,14 @@
     <meta name="theme-color" content="#111714">
     <link rel="stylesheet" href="/static/styles.css">
     <link rel="stylesheet" href="/static/sokoban.css">
-    <title>Sokoban — Warehouse Logic</title>
+    <title>Warehouse Keeper</title>
 </head>
 <body class="sokoban-app">
     <div id="navbar-placeholder"></div>
     <main class="sokoban-main">
         <header class="sokoban-heading">
-            <div class="sokoban-kicker">A LITTLE SPATIAL REASONING</div>
-            <h1>Warehouse <span>Logic</span></h1>
-            <p>Push every crate onto a goal. Plan ahead — crates can only be pushed, never pulled.</p>
+            
+            <h1>Warehouse <span>Keeper</span></h1>
         </header>
 
         <div class="sokoban-layout">
@@ -74,7 +73,7 @@
                         <option>Loading collections…</option>
                     </select>
                     <button id="download-collection-button" class="game-button" type="button" disabled>
-                        Import &amp; play
+                        Import
                     </button>
                 </div>
                 <p id="collections-status" class="levels-status" role="status" aria-live="polite">
@@ -109,13 +108,9 @@
                     <ol id="level-list" class="level-list" aria-label="Available levels"></ol>
                     <button id="show-more-button" class="show-more-button" type="button" hidden>Show more levels</button>
                 </div>
-                <p class="download-note">Imported collections are saved locally in <code>data/sokoban/collections/</code> or in Vercel Blob when deployed. Your API key stays on the server.</p>
+
             </aside>
         </div>
-        <footer class="sokoban-footer">
-            <span>Created with the <a href="https://kenney.nl/assets/sokoban" rel="noreferrer">Kenney Sokoban asset pack</a>.</span>
-            <span>Levels provided by <a href="https://letslogic.com" rel="noreferrer">LetsLogic</a>.</span>
-        </footer>
     </main>
     <script src="/static/navbar-without-sidebar.js" defer></script>
     <script src="/static/sokoban.js" defer></script>

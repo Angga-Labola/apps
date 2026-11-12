@@ -475,7 +475,7 @@ async function loadSavedCollections() {
         savedCollections = result.collections;
         populateSavedCollectionSelect();
         savedCollectionsStatusElement.textContent = result.storage === "vercel_blob"
-            ? `${savedCollections.length} saved in Vercel Blob.`
+            ? `${savedCollections.length} saved in the server.`
             : `${savedCollections.length} saved in data/sokoban/collections/.`;
     } catch (error) {
         savedCollectionsStatusElement.textContent = error.message;
@@ -492,7 +492,7 @@ async function downloadSelectedCollection() {
     if (!selected) return;
 
     downloadCollectionButton.disabled = true;
-    collectionsStatusElement.textContent = `Downloading ${selected.name}…`;
+    collectionsStatusElement.textContent = `Importing ${selected.name}…`;
     try {
         const response = await fetch(
             `/api/sokoban/collections/${encodeURIComponent(selected.id)}/download`,
@@ -516,9 +516,9 @@ async function downloadSelectedCollection() {
             throw new Error("LetsLogic returned an unexpected level collection.");
         }
         const storageMessage = collection.storage === "vercel_blob"
-            ? `Saved to Vercel Blob as ${collection.saved_file};`
-            : `Saved to data/sokoban/collections/${collection.saved_file};`;
-        collectionsStatusElement.textContent = `${storageMessage} opening ${selected.name}.`;
+            ? `Saved to the server as ${collection.saved_file};`
+            : `Saved to data/sokoban/collections/${collection.saved_file}`;
+        collectionsStatusElement.textContent = `${storageMessage}`;
         activateCollection(
             collection,
             `${collection.levels.length} levels downloaded and ready to play.`,
