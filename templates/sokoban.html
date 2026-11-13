@@ -45,14 +45,6 @@
                 </div>
                 <p id="game-status" class="game-status" role="status" aria-live="polite"></p>
 
-                <div id="solution-playback-controls" class="solution-playback-controls"
-                    role="group" aria-label="Solution playback" hidden>
-                    <button id="solution-previous-move-button" class="game-button secondary"
-                        type="button" aria-label="Previous solution move" disabled>←</button>
-                    <output id="solution-move-counter" aria-live="polite">Move 0 of 0</output>
-                    <button id="solution-next-move-button" class="game-button"
-                        type="button" aria-label="Next solution move" disabled>→</button>
-                </div>
                 <div id="game-board" class="game-board" role="img" aria-label="Sokoban game board">
                     <div id="game-grid" class="game-grid"></div>
                 </div>
@@ -65,6 +57,14 @@
                     <button id="show-solution-button" class="game-button secondary" type="button" disabled>
                         Search solution
                     </button>
+                    <div id="solution-playback-controls" class="solution-playback-controls"
+                        role="group" aria-label="Solution playback" hidden>
+                        <button id="solution-previous-move-button" class="game-button secondary"
+                        type="button" aria-label="Previous solution move" disabled>←</button>
+                        <output id="solution-move-counter" aria-live="polite">Move 0 of 0</output>
+                        <button id="solution-next-move-button" class="game-button"
+                        type="button" aria-label="Next solution move" disabled>→</button>
+                    </div>
                 </div>
                 <div class="touch-controls" aria-label="Movement controls">
                     <button type="button" data-move="up" aria-label="Move up">↑</button>
