@@ -35,15 +35,12 @@
                         aria-label="Enter fullscreen game view" aria-pressed="false">
                         Fullscreen
                     </button>
-                    <button id="check-level-button" class="game-button secondary" type="button" disabled>
-                        Check
-                    </button>
-                    <button id="show-solution-button" class="game-button secondary" type="button" disabled>
-                        Show solution
-                    </button>
                     <button type="button" class="game-button secondary" onclick="window.location.href='/sokoban/import_collections';">
                     Import
                     </button>
+                    <button id="restart-button" class="game-button secondary" type="button">Restart</button>
+                    <button id="previous-button" class="game-button" type="button" disabled>Previous</button>
+                    <button id="next-button" class="game-button" type="button" disabled>Next</button>
                 </div>
 
                 <p id="game-status" class="game-status" role="status" aria-live="polite"></p>
@@ -62,9 +59,12 @@
 
                 <div class="game-controls">
                     <button id="undo-button" class="game-button secondary" type="button">Undo</button>
-                    <button id="restart-button" class="game-button secondary" type="button">Restart</button>
-                    <button id="previous-button" class="game-button" type="button" disabled>Previous</button>
-                    <button id="next-button" class="game-button" type="button" disabled>Next</button>
+                    <button id="check-level-button" class="game-button secondary" type="button" disabled>
+                        Check
+                    </button>
+                    <button id="show-solution-button" class="game-button secondary" type="button" disabled>
+                        Search solution
+                    </button>
                 </div>
                 <div class="touch-controls" aria-label="Movement controls">
                     <button type="button" data-move="up" aria-label="Move up">↑</button>
